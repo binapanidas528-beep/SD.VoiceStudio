@@ -3,112 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD.VoiceStudio - Text to Speech & MP3 Exporter</title>
+    <title>SD.VoiceStudio - Multilingual Text to Speech Engine</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
 
     <!-- Header -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 py-4 px-6 flex justify-between items-center shadow-md flex-wrap gap-3">
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold shadow-md shadow-indigo-500/30 text-white">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold text-white shadow-md shadow-indigo-500/30">
                 🎙️
             </div>
             <div>
                 <h1 class="text-xl font-bold tracking-wide text-slate-900 dark:text-white">SD.VoiceStudio</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Multilingual AI Text to MP3 Voice Generator</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Multilingual Male & Female Voice Generator</p>
             </div>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <button onclick="toggleTheme()" class="bg-slate-200 dark:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition">
-                <span id="theme-icon">☀️ Light</span>
-            </button>
-        </div>
+        <button onclick="toggleTheme()" class="bg-slate-200 dark:bg-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition">
+            <span id="theme-icon">☀️ Light</span>
+        </button>
     </header>
 
     <!-- Main Studio Box -->
     <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Controls Banner -->
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-md space-y-4">
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- Language Selector -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Voice Language/Voice List Selector -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">🌐 Voice Language</label>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">🌐 Select System Voice & Accent</label>
                     <select id="voice-select" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs rounded-xl p-2.5 focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 font-medium">
-                        <option value="or-IN">🌐 ଓଡ଼ିଆ (Odia)</option>
-                        <option value="hi-IN" selected>🌐 हिंदी (Hindi)</option>
-                        <option value="en-US">🌐 English (US)</option>
-                        <option value="bn-IN">🌐 বাংলা (Bengali)</option>
+                        <option value="">Loading Voices... ⏳</option>
                     </select>
                 </div>
 
+                <!-- Voice Gender Tone Preset -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">👤 Voice Tone Preset</label>
+                    <select id="gender-preset" onchange="applyGenderPreset()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs rounded-xl p-2.5 focus:outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 font-medium">
+                        <option value="female">👩 Female Tone (Default)</option>
+                        <option value="male">👨 Male Tone (Deep Pitch)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Speed Control -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">⚡ Speed (Rate): <span id="speed-val" class="text-indigo-500 font-bold">1.0x</span></label>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">⚡ Speed: <span id="speed-val" class="text-indigo-500 font-bold">1.0x</span></label>
                     <input type="range" id="rate-range" min="0.5" max="2" value="1" step="0.1" oninput="document.getElementById('speed-val').innerText = this.value + 'x'" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
                 </div>
 
                 <!-- Pitch Control -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">🎵 Pitch: <span id="pitch-val" class="text-indigo-500 font-bold">1.0</span></label>
-                    <input type="range" id="pitch-range" min="0.5" max="1.5" value="1" step="0.1" oninput="document.getElementById('pitch-val').innerText = this.value" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">🎵 Pitch Tone: <span id="pitch-val" class="text-indigo-500 font-bold">1.0</span></label>
+                    <input type="range" id="pitch-range" min="0.3" max="1.6" value="1" step="0.1" oninput="document.getElementById('pitch-val').innerText = this.value" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer">
                 </div>
             </div>
 
-            <!-- Text Input Area -->
+            <!-- Text Area -->
             <div>
-                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">✍️ Enter Your Text Here (Odia, Hindi, English, Bengali, etc.):</label>
-                <textarea id="text-input" rows="6" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-4 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition placeholder-slate-400" placeholder="Yahan apna text likhein ya paste karein..."></textarea>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">✍️ Text Input (Odia, Hindi, English, Bengali, etc.):</label>
+                <textarea id="text-input" rows="6" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-4 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition" placeholder="Write text here..."></textarea>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex flex-wrap gap-3">
                 <button onclick="playVoice()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl text-xs transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2">
-                    <span>🔊</span> <span>Play Audio (Preview)</span>
+                    <span>🔊</span> <span>Play Audio</span>
                 </button>
                 <button onclick="stopVoice()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold py-3 px-5 rounded-xl text-xs transition">
                     ⏹️ Stop
                 </button>
-                <button onclick="recordAndDownloadMP3()" id="download-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl text-xs transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2">
-                    <span>📥</span> <span>Generate & Download MP3</span>
-                </button>
-            </div>
-
-            <!-- Status Indicator -->
-            <div id="status-box" class="hidden p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-600 dark:text-indigo-300 font-medium text-center">
-                Audio record ho raha hai... Kripya shanti rakhein ⏳
-            </div>
-
-            <!-- Download Audio Player Preview -->
-            <div id="audio-preview-container" class="hidden space-y-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-                <p class="text-xs font-semibold text-emerald-500">✅ Audio Tayyar Hai! Niche se Download karein:</p>
-                <audio id="audio-player" controls class="w-full"></audio>
-                <a id="download-link" download="SD_VoiceStudio_Audio.mp3" class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
-                    ⬇️ Click Here to Save MP3 File
-                </a>
             </div>
 
         </div>
 
     </main>
-
-    <footer class="py-4 text-center text-xs text-slate-500 border-t border-slate-200 dark:border-slate-800">
-        SD.VoiceStudio • Multilingual Text-to-Speech Engine
-    </footer>
 
     <script>
         let synth = window.speechSynthesis;
@@ -116,11 +96,37 @@
 
         function populateVoices() {
             voices = synth.getVoices();
+            const voiceSelect = document.getElementById('voice-select');
+            voiceSelect.innerHTML = '';
+
+            voices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-lang', voice.lang);
+                option.setAttribute('data-name', voice.name);
+                option.value = i;
+                voiceSelect.appendChild(option);
+            });
+
+            if(voices.length === 0) {
+                voiceSelect.innerHTML = '<option>No Browser Voices Found</option>';
+            }
         }
 
         populateVoices();
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = populateVoices;
+        }
+
+        function applyGenderPreset() {
+            const preset = document.getElementById('gender-preset').value;
+            const pitchSlider = document.getElementById('pitch-range');
+            if (preset === 'male') {
+                pitchSlider.value = 0.6;
+            } else {
+                pitchSlider.value = 1.0;
+            }
+            document.getElementById('pitch-val').innerText = pitchSlider.value;
         }
 
         function toggleTheme() {
@@ -138,85 +144,23 @@
         function playVoice() {
             synth.cancel();
             const text = document.getElementById('text-input').value.trim();
-            if (!text) return alert('Kripya pehle text likhein!');
+            if (!text) return alert('Please enter text!');
 
             const utterance = new SpeechSynthesisUtterance(text);
-            const selectedLang = document.getElementById('voice-select').value;
-            utterance.lang = selectedLang;
+            const selectedVoiceIndex = document.getElementById('voice-select').value;
+
+            if (voices[selectedVoiceIndex]) {
+                utterance.voice = voices[selectedVoiceIndex];
+            }
+
             utterance.rate = parseFloat(document.getElementById('rate-range').value);
             utterance.pitch = parseFloat(document.getElementById('pitch-range').value);
-
-            // Match browser voice if available
-            const matchingVoice = voices.find(v => v.lang.startsWith(selectedLang.split('-')[0]));
-            if (matchingVoice) utterance.voice = matchingVoice;
 
             synth.speak(utterance);
         }
 
         function stopVoice() {
             synth.cancel();
-        }
-
-        async function recordAndDownloadMP3() {
-            const text = document.getElementById('text-input').value.trim();
-            if (!text) return alert('Kripya text likhein!');
-
-            const statusBox = document.getElementById('status-box');
-            const previewContainer = document.getElementById('audio-preview-container');
-            
-            statusBox.classList.remove('hidden');
-            statusBox.innerText = "Audio Process & Record ho raha hai... ⏳";
-            previewContainer.classList.add('hidden');
-
-            try {
-                // Using Web Audio Stream capture
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const destination = audioCtx.createMediaStreamDestination();
-                const mediaRecorder = new MediaRecorder(destination.stream);
-                let audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    
-                    const audioPlayer = document.getElementById('audio-player');
-                    const downloadLink = document.getElementById('download-link');
-                    
-                    audioPlayer.src = audioUrl;
-                    downloadLink.href = audioUrl;
-                    
-                    statusBox.classList.add('hidden');
-                    previewContainer.classList.remove('hidden');
-                };
-
-                // Request user media / synthesize capture
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const source = audioCtx.createMediaStreamSource(stream);
-                source.connect(destination);
-
-                mediaRecorder.start();
-                playVoice();
-
-                // Estimate text read duration
-                const durationEstimate = Math.max(3000, text.length * 120 / parseFloat(document.getElementById('rate-range').value));
-
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                    stream.getTracks().forEach(track => track.stop());
-                }, durationEstimate);
-
-            } catch (err) {
-                // Fallback for direct browser download simulation
-                playVoice();
-                setTimeout(() => {
-                    statusBox.classList.add('hidden');
-                    alert('Audio preview chalu ho gaya hai! Direct download ke liye System audio permission allow karein.');
-                }, 1000);
-            }
         }
     </script>
 </body>
