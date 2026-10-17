@@ -6,6 +6,18 @@
     <title>SD.VoiceStudio - AI Voice & Audio Companion</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
+
+    <!-- Google Analytics Tag -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Replace G-XXXXXXXXXX with your Google Analytics Measurement ID
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -209,8 +221,7 @@
                         body: JSON.stringify({ prompt: prompt })
                     });
                     const data = await res.json();
-                    textToSpace = data.candidates[0].content.parts[0].text;
-                    textToSpeak = textToSpace;
+                    textToSpeak = data.candidates[0].content.parts[0].text;
                     outputBox.innerHTML = textToSpeak.replace(/\n/g, '<br>');
                 } else {
                     outputBox.innerHTML = `<strong>Generating Text-to-Speech (${currentGender.toUpperCase()}):</strong><br>${script}`;
