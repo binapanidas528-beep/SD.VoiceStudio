@@ -60,7 +60,20 @@
                     </div>
                 </div>
 
+                <!-- Gender & Voice Persona Selection -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-300">Voice Gender</label>
+                        <div class="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button onclick="setGender('female')" id="gender-female" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-venus"></i> Female
+                            </button>
+                            <button onclick="setGender('male')" id="gender-male" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-mars"></i> Male
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Voice Tone / Persona</label>
                         <select id="voice-persona" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -70,13 +83,14 @@
                             <option value="Fenrir">Fenrir (Authoritative)</option>
                         </select>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-semibold text-slate-300">Action Mode</label>
-                        <select id="action-mode" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="tts">🔊 Direct Text-to-Speech</option>
-                            <option value="explain">🤖 AI Audio Explanation</option>
-                        </select>
-                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-300">Action Mode</label>
+                    <select id="action-mode" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="tts">🔊 Direct Text-to-Speech</option>
+                        <option value="explain">🤖 AI Audio Explanation</option>
+                    </select>
                 </div>
 
                 <button onclick="processAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
@@ -121,7 +135,19 @@
     <script>
         const WORKER_PROXY = "https://sd-voicestudio.binapanidas528.workers.dev";
         let currentLang = 'or';
-        let currentAudioBlob = null;
+        let currentGender = 'female';
+        let availableVoices = [];
+
+        // Load voices dynamically
+        function loadVoices() {
+            if ('speechSynthesis' in window) {
+                availableVoices = window.speechSynthesis.getVoices();
+            }
+        }
+        loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -133,6 +159,31 @@
                 btn.className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
             document.getElementById(`lang-${lang}`).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
+        }
+
+        function setGender(gender) {
+            currentGender = gender;
+            document.querySelectorAll('.gender-btn').forEach(btn => {
+                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
+            });
+            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
+        }
+
+        function getBestVoice(targetLang, gender) {
+            if (!availableVoices.length) availableVoices = window.speechSynthesis.getVoices();
+            
+            const langCode = targetLang === 'hi' ? 'hi' : targetLang === 'or' ? 'or' : targetLang === 'bn' ? 'bn' : 'en';
+            const matches = availableVoices.filter(v => v.lang.startsWith(langCode));
+
+            if (matches.length > 0) {
+                const genderMatch = matches.find(v => v.name.toLowerCase().includes(gender));
+                if (genderMatch) return genderMatch;
+                return matches[0];
+            }
+
+            // Fallback voice search
+            const fallbackMatch = availableVoices.find(v => v.name.toLowerCase().includes(gender));
+            return fallbackMatch || availableVoices[0] || null;
         }
 
         async function processAudio() {
@@ -147,20 +198,10 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Audio...`;
 
             try {
-                if (mode === 'tts') {
-                    outputBox.innerHTML = `<strong>Generating Text-to-Speech:</strong><br>${script}`;
-                    
-                    // Web Speech API for Browser TTS Audio Synthesis
-                    const utterance = new SpeechSynthesisUtterance(script);
-                    utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-US';
-                    window.speechSynthesis.speak(utterance);
+                window.speechSynthesis.cancel(); // Stop previous audio without reload
 
-                    // Create standard audio stream file for download
-                    const synth = window.speechSynthesis;
-                    const blob = new Blob([script], { type: 'audio/mp3' });
-                    currentAudioBlob = blob;
-
-                } else {
+                let textToSpeak = script;
+                if (mode === 'explain') {
                     const prompt = `Language: ${currentLang}. Explain this topic clearly in simple terms: ${script}`;
                     const res = await fetch(WORKER_PROXY, {
                         method: 'POST',
@@ -168,13 +209,31 @@
                         body: JSON.stringify({ prompt: prompt })
                     });
                     const data = await res.json();
-                    const aiText = data.candidates[0].content.parts[0].text;
-                    outputBox.innerHTML = aiText.replace(/\n/g, '<br>');
-
-                    const utterance = new SpeechSynthesisUtterance(aiText);
-                    window.speechSynthesis.speak(utterance);
-                    currentAudioBlob = new Blob([aiText], { type: 'audio/mp3' });
+                    textToSpeak = data.candidates[0].content.parts[0].text;
+                    outputBox.innerHTML = textToSpeak.replace(/\n/g, '<br>');
+                } else {
+                    outputBox.innerHTML = `<strong>Generating Text-to-Speech (${currentGender.toUpperCase()}):</strong><br>${script}`;
                 }
+
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
+
+                const selectedVoice = getBestVoice(currentLang, currentGender);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+
+                // Voice tone / pitch adjust for male/female feel
+                if (currentGender === 'female') {
+                    utterance.pitch = 1.2;
+                    utterance.rate = 1.0;
+                } else {
+                    utterance.pitch = 0.8;
+                    utterance.rate = 0.95;
+                }
+
+                window.speechSynthesis.speak(utterance);
+
             } catch (err) {
                 outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
             }
@@ -187,11 +246,10 @@
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Pehle Audio Generate karein!");
 
-            // Create downloadable text-audio stream
             const element = document.createElement("a");
             const file = new Blob([script], {type: 'audio/mp3'});
             element.href = URL.createObjectURL(file);
-            element.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+            element.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.mp3`;
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
@@ -204,7 +262,7 @@
             }
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const recognition = new SpeechRecognition();
-            recognition.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-US';
+            recognition.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
 
             const micBtn = document.getElementById('mic-btn');
             micBtn.classList.add('text-rose-500', 'animate-pulse');
