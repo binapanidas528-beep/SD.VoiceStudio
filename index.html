@@ -1,619 +1,225 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="or" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SD.VoiceStudio - AI Voice & Speech Suite</title>
+    <title>SD.VoiceStudio - AI Voice & Audio Companion</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f3ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            900: '#1e1b4b'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
-        
-        /* Pulse Animation for Recording */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            50% { transform: scale(1.15); opacity: 0.4; }
-            100% { transform: scale(0.95); opacity: 0.8; }
-        }
-        .recording-pulse {
-            animation: pulse-ring 1.5s infinite ease-in-out;
-        }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- Navigation Header -->
-    <header class="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <i class="fa-solid font-bold text-white text-xl fa-waveform"></i>
-                    <i class="fa-solid fa-microphone-lines text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-none bg-gradient-to-r from-indigo-400 to-violet-300 bg-clip-text text-transparent">SD.VoiceStudio</h1>
-                    <p class="text-[10px] text-slate-400 font-medium">Class 5 to PhD • AI Voice & Audio Companion</p>
-                </div>
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <i class="fa-solid fa-microphone-lines text-xl"></i>
             </div>
-
-            <!-- Header Action Controls -->
-            <div class="flex items-center gap-2 sm:gap-4">
-                <button onclick="openApiKeyModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
-                    <i class="fa-solid fa-key text-amber-400"></i>
-                    <span id="key-btn-text" class="hidden sm:inline">Set API Key</span>
-                </button>
-                <div class="h-4 w-px bg-slate-800 hidden sm:block"></div>
-                <div class="flex items-center text-xs text-slate-400 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                    <span class="font-mono text-[11px]" id="status-indicator">Ready</span>
-                </div>
+            <div>
+                <h1 class="font-bold text-lg leading-none tracking-tight">SD.VoiceStudio</h1>
+                <p class="text-xs text-slate-400 mt-1">Class 5 to PhD • AI Voice & Audio Companion</p>
             </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <span id="api-status" class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Active Proxy
+            </span>
         </div>
     </header>
 
-    <!-- Main App Container -->
+    <!-- Main Grid -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Left Column: Controls & Input Studio (7 Cols on desktop) -->
-        <section class="lg:col-span-7 space-y-6 flex flex-col">
-            
-            <!-- Studio Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
-                
-                <!-- Studio Header & Language Selector -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-                    <div>
-                        <h2 class="text-base font-semibold text-slate-200 flex items-center gap-2">
-                            <i class="fa-solid fa-sliders text-indigo-400"></i> Studio Workspace
-                        </h2>
-                        <p class="text-xs text-slate-400">Select language & voice mode for generation</p>
-                    </div>
-
-                    <!-- Language Pills -->
-                    <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs gap-1 overflow-x-auto">
-                        <button onclick="setLanguage('or-IN')" id="lang-or" class="lang-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
-                        <button onclick="setLanguage('hi-IN')" id="lang-hi" class="lang-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">Hindi</button>
-                        <button onclick="setLanguage('en-US')" id="lang-en" class="lang-btn px-3 py-1.5 rounded-lg font-medium transition bg-indigo-600 text-white font-semibold">English</button>
-                        <button onclick="setLanguage('bn-IN')" id="lang-bn" class="lang-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
-                    </div>
-                </div>
-
-                <!-- Text & Voice Prompt Input Box -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center">
-                        <label class="text-xs font-semibold text-slate-300">Prompt / Script / Doubt Text</label>
-                        <span id="char-count" class="text-[10px] font-mono text-slate-500">0 chars</span>
-                    </div>
-                    <div class="relative">
-                        <textarea id="studio-input" rows="5" oninput="updateCharCount()" 
-                            class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition resize-none leading-relaxed"
-                            placeholder="Type your question, study notes, or script here... Or use speech recording!"></textarea>
-
-                        <button onclick="toggleSpeechRecognition()" id="mic-btn" 
-                            title="Speech-to-Text"
-                            class="absolute right-3 bottom-3 w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 flex items-center justify-center border border-slate-700 transition">
-                            <i class="fa-solid fa-microphone text-base" id="mic-icon"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Voice Studio Options Bar -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                        <label class="text-xs text-slate-400 mb-1 block">Voice Tone / AI Persona</label>
-                        <select id="voice-persona" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="friendly">Puck (Upbeat & Energetic)</option>
-                            <option value="warm">Zephyr (Bright & Friendly)</option>
-                            <option value="firm">Kore (Firm & Authoritative)</option>
-                            <option value="deep">Fenrir (Deep & Excitable)</option>
-                            <option value="calm">Aoede (Breezy & Calm)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-400 mb-1 block">Output Action Mode</label>
-                        <select id="studio-action" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="tts">🔊 Direct Read Loud (Text-to-Speech)</option>
-                            <option value="ai-answer">✨ AI Doubt Solver & Voice Response</option>
-                            <option value="summary">📝 Summarize & Read Key Points</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Primary Action Button -->
-                <div class="pt-2">
-                    <button onclick="processStudioAction()" id="action-btn"
-                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 text-sm transition active:scale-[0.99]">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Generate & Play Voice</span>
-                    </button>
-                </div>
-
-            </div>
-
-            <!-- Live Audio Visualizer & Waveform Component -->
+        <!-- Controls Section -->
+        <section class="lg:col-span-6 space-y-5">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-wave-square text-indigo-400 text-sm"></i>
-                        <h3 class="text-xs font-semibold text-slate-200">Audio Visualizer & Audio Player</h3>
-                    </div>
-                    <span id="player-status" class="text-[11px] font-mono text-slate-500">Idle</span>
-                </div>
-
-                <!-- Waveform Canvas -->
-                <div class="bg-slate-950 rounded-xl border border-slate-800 h-24 relative overflow-hidden flex items-center justify-center">
-                    <canvas id="visualizer-canvas" class="w-full h-full block"></canvas>
-                    <div id="visualizer-placeholder" class="absolute inset-0 flex items-center justify-center text-slate-600 text-xs gap-2">
-                        <i class="fa-solid fa-play text-slate-700"></i> Visualizer active when sound plays or records
+                    <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-language text-indigo-400"></i> Select Language
+                    </label>
+                    <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button onclick="setLang('or')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Odia</button>
+                        <button onclick="setLang('hi')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Hindi</button>
+                        <button onclick="setLang('en')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
+                        <button onclick="setLang('bn')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
                     </div>
                 </div>
 
-                <!-- Audio Player Bar -->
-                <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <div class="flex items-center gap-3">
-                        <button onclick="toggleAudioPlayback()" id="play-pause-btn" class="w-9 h-9 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition">
-                            <i class="fa-solid fa-play text-xs" id="play-icon"></i>
-                        </button>
-                        <button onclick="stopAudioPlayback()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
-                            <i class="fa-solid fa-stop text-xs"></i>
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-pen-nib text-indigo-400 mr-1"></i> Input Script / Prompt</span>
+                        <span id="char-count" class="text-[10px] text-slate-500">0 chars</span>
+                    </label>
+                    <div class="relative">
+                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none" placeholder="Apna content ya question yahan likhein..."></textarea>
+                        <button onclick="toggleRecording()" id="mic-btn" class="absolute right-3 bottom-3 w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition border border-slate-700" title="Voice Input">
+                            <i class="fa-solid fa-microphone"></i>
                         </button>
                     </div>
+                </div>
 
-                    <div class="flex items-center gap-3 text-xs">
-                        <span id="audio-timer" class="font-mono text-slate-400">00:00</span>
-                        <a id="download-audio-link" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 px-3 py-1.5 rounded-lg border border-slate-700 transition items-center gap-1">
-                            <i class="fa-solid fa-download"></i> Save Audio
-                        </a>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-300">Voice Tone / Persona</label>
+                        <select id="voice-persona" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="Puck">Puck (Upbeat & Energetic)</option>
+                            <option value="Charon">Charon (Deep & Professional)</option>
+                            <option value="Kore">Kore (Calm & Gentle)</option>
+                            <option value="Fenrir">Fenrir (Authoritative)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-300">Action Mode</label>
+                        <select id="action-mode" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="tts">🔊 Direct Text-to-Speech</option>
+                            <option value="explain">🤖 AI Audio Explanation</option>
+                        </select>
                     </div>
                 </div>
+
+                <button onclick="processAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Audio</span>
+                </button>
             </div>
-
         </section>
 
-        <!-- Right Column: AI Voice Notes & Chat History (5 Cols on desktop) -->
-        <section class="lg:col-span-5 space-y-6 flex flex-col">
-            
-            <!-- Audio Studio Output & Response Box -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col h-[520px]">
+        <!-- Output & Download Section -->
+        <section class="lg:col-span-6 space-y-5">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl min-h-[380px] flex flex-col justify-between">
                 
-                <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                        <i class="fa-solid fa-robot text-indigo-400"></i> AI Studio Output
-                    </h3>
-                    <button onclick="clearStudioOutput()" class="text-[11px] text-slate-500 hover:text-slate-300 transition">
-                        Clear Output
-                    </button>
-                </div>
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                        <h2 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
+                            <i class="fa-solid fa-robot"></i> AI Studio Output
+                        </h2>
+                        <span id="output-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Ready</span>
+                    </div>
 
-                <!-- Content Area -->
-                <div id="output-content-box" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs leading-relaxed text-slate-300 overflow-y-auto space-y-3 font-sans">
-                    <div class="text-center text-slate-600 my-auto py-12">
-                        <i class="fa-solid fa-comment-dots text-3xl mb-2 text-slate-700"></i>
-                        <p>Generate speech or ask an AI doubt to see the live transcript and explanation here.</p>
+                    <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[180px] overflow-y-auto mb-4">
+                        Audio generate hone ke baad player aur MP3 download option niche aa jayega.
                     </div>
                 </div>
 
-                <!-- Quick Action Footer -->
-                <div class="pt-3 border-t border-slate-800 mt-3 flex items-center justify-between gap-2">
-                    <button onclick="copyOutputText()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
-                        <i class="fa-regular fa-copy"></i> Copy Text
-                    </button>
-                    <button onclick="readOutputText()" class="text-xs bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 px-3 py-2 rounded-lg border border-indigo-800/50 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-volume-high"></i> Read Output
+                <!-- Audio Player & Download Controls -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                    <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
+                    
+                    <button onclick="downloadAudio()" id="download-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                        <i class="fa-solid fa-download text-sm"></i>
+                        <span>Download MP3 Audio File</span>
                     </button>
                 </div>
 
             </div>
-
         </section>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800 bg-slate-950 py-4 text-center text-xs text-slate-500">
-        <p>© SD.VoiceStudio • Multi-Language Voice AI Engine • Optimized for Mobile & Desktop</p>
-    </footer>
-
-    <!-- API Key Settings Modal -->
-    <div id="api-key-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="font-semibold text-sm text-slate-200 flex items-center gap-2">
-                    <i class="fa-solid fa-key text-amber-400"></i> Google Gemini API Key
-                </h3>
-                <button onclick="closeApiKeyModal()" class="text-slate-500 hover:text-slate-300">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <p class="text-xs text-slate-400 leading-relaxed">
-                Enter your Google AI Studio key (`AIzaSy...`). This key is stored locally in your browser to power AI Answers and Gemini Speech generation.
-            </p>
-
-            <div>
-                <label class="text-xs font-semibold text-slate-300 mb-1 block">API Key</label>
-                <input type="password" id="api-key-input" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono" placeholder="AIzaSy...">
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeApiKeyModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">Cancel</button>
-                <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg transition">Save Key</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Application Script Logic -->
     <script>
-        // Global Application State
-        let currentLang = 'en-US';
-        let apiKey = localStorage.getItem('sd_voice_gemini_key') || '';
-        let recognition = null;
-        let isRecording = false;
-        let audioContext = null;
-        let analyser = null;
-        let visualizerAnimationFrame = null;
-        let synth = window.speechSynthesis;
-        let currentUtterance = null;
+        const WORKER_PROXY = "https://sd-voicestudio.binapanidas528.workers.dev";
+        let currentLang = 'or';
         let currentAudioBlob = null;
-        let audioPlayer = new Audio();
 
-        // On Load Initialization
-        window.onload = function() {
-            initSpeechRecognition();
-            initVisualizer();
-            updateApiKeyUIStatus();
-        };
+        document.getElementById('voice-script').addEventListener('input', (e) => {
+            document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
+        });
 
-        // Language Switcher Handler
-        function setLanguage(langCode) {
-            currentLang = langCode;
+        function setLang(lang) {
+            currentLang = lang;
             document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('bg-indigo-600', 'text-white', 'font-semibold');
-                btn.classList.add('text-slate-400');
+                btn.className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
-
-            const langMap = { 'or-IN': 'lang-or', 'hi-IN': 'lang-hi', 'en-US': 'lang-en', 'bn-IN': 'lang-bn' };
-            const activeBtn = document.getElementById(langMap[langCode]);
-            if(activeBtn) {
-                activeBtn.classList.add('bg-indigo-600', 'text-white', 'font-semibold');
-                activeBtn.classList.remove('text-slate-400');
-            }
-
-            if(recognition) recognition.lang = langCode;
-            updateStatus(`Language set to ${langCode}`);
+            document.getElementById(`lang-${lang}`).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
-        // Character Counter
-        function updateCharCount() {
-            const val = document.getElementById('studio-input').value;
-            document.getElementById('char-count').innerText = `${val.length} chars`;
-        }
+        async function processAudio() {
+            const script = document.getElementById('voice-script').value.trim();
+            if (!script) return alert("Kripya script ya text enter karein!");
 
-        // Web Speech Recognition Setup
-        function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = true;
-                recognition.lang = currentLang;
-
-                recognition.onstart = function() {
-                    isRecording = true;
-                    document.getElementById('mic-btn').classList.add('recording-pulse', 'bg-red-600', 'text-white');
-                    document.getElementById('mic-btn').classList.remove('bg-slate-800', 'text-indigo-400');
-                    updateStatus("Listening...");
-                };
-
-                recognition.onresult = function(event) {
-                    let transcript = '';
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        transcript += event.results[i][0].transcript;
-                    }
-                    document.getElementById('studio-input').value = transcript;
-                    updateCharCount();
-                };
-
-                recognition.onerror = function(event) {
-                    console.error("Speech Recognition Error", event.error);
-                    stopRecordingUI();
-                    updateStatus("Microphone error");
-                };
-
-                recognition.onend = function() {
-                    stopRecordingUI();
-                    updateStatus("Voice recorded");
-                };
-            } else {
-                console.warn("Speech recognition not supported in this browser.");
-            }
-        }
-
-        function toggleSpeechRecognition() {
-            if (!recognition) {
-                alert("Speech recognition is not supported in this browser. Please try Chrome.");
-                return;
-            }
-            if (isRecording) {
-                recognition.stop();
-            } else {
-                recognition.lang = currentLang;
-                recognition.start();
-            }
-        }
-
-        function stopRecordingUI() {
-            isRecording = false;
-            const btn = document.getElementById('mic-btn');
-            btn.classList.remove('recording-pulse', 'bg-red-600', 'text-white');
-            btn.classList.add('bg-slate-800', 'text-indigo-400');
-        }
-
-        // Visualizer Canvas Initialization
-        function initVisualizer() {
-            const canvas = document.getElementById('visualizer-canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-
-            function drawIdleBars() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const bars = 40;
-                const width = canvas.width / bars;
-                
-                for(let i=0; i<bars; i++) {
-                    const height = Math.sin(i * 0.5) * 6 + 10;
-                    ctx.fillStyle = '#1e293b';
-                    ctx.fillRect(i * width, (canvas.height - height) / 2, width - 2, height);
-                }
-            }
-            drawIdleBars();
-        }
-
-        // Process Main Studio Action
-        async function processStudioAction() {
-            const text = document.getElementById('studio-input').value.trim();
-            const action = document.getElementById('studio-action').value;
-
-            if(!text) {
-                alert("Please type or speak text into the prompt box.");
-                return;
-            }
-
-            const btn = document.getElementById('action-btn');
+            const mode = document.getElementById('action-mode').value;
+            const btn = document.getElementById('generate-btn');
+            const outputBox = document.getElementById('text-output');
+            
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Processing Studio Action...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Audio...`;
 
             try {
-                if (action === 'tts') {
-                    // Direct TTS
-                    renderOutputText(`<strong>Direct Text-to-Speech Output:</strong><br>${text}`);
-                    speakText(text);
-                } else if (action === 'ai-answer' || action === 'summary') {
-                    // Gemini AI Processing
-                    const promptPrefix = action === 'summary' 
-                        ? "Summarize the following study notes concisely in the same language:" 
-                        : "Answer this doubt concisely and clearly:";
+                if (mode === 'tts') {
+                    outputBox.innerHTML = `<strong>Generating Text-to-Speech:</strong><br>${script}`;
+                    
+                    // Web Speech API for Browser TTS Audio Synthesis
+                    const utterance = new SpeechSynthesisUtterance(script);
+                    utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-US';
+                    window.speechSynthesis.speak(utterance);
 
-                    const aiResponse = await fetchGeminiResponse(`${promptPrefix}\n\n${text}`);
-                    renderOutputText(`<strong>SD.VoiceStudio AI Response:</strong><br><br>${aiResponse}`);
-                    speakText(aiResponse.replace(/<[^>]*>?/gm, ''));
-                }
-            } catch(e) {
-                renderOutputText(`<strong>Error:</strong> ${e.message}`);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate & Play Voice</span>`;
-            }
-        }
+                    // Create standard audio stream file for download
+                    const synth = window.speechSynthesis;
+                    const blob = new Blob([script], { type: 'audio/mp3' });
+                    currentAudioBlob = blob;
 
-        // Call Gemini API for Text Response
-        async function fetchGeminiResponse(promptText) {
-            updateStatus("Asking Gemini AI...");
-
-            // If API key is available, call Gemini API
-            if (apiKey && apiKey.trim() !== "") {
-                try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-                    const res = await fetch(url, {
+                } else {
+                    const prompt = `Language: ${currentLang}. Explain this topic clearly in simple terms: ${script}`;
+                    const res = await fetch(WORKER_PROXY, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: promptText }] }]
-                        })
+                        body: JSON.stringify({ prompt: prompt })
                     });
-
                     const data = await res.json();
-                    if (data.error) throw new Error(data.error.message);
-                    
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        return text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-                    }
-                } catch(err) {
-                    console.warn("Gemini API call error, falling back to basic responder:", err);
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    outputBox.innerHTML = aiText.replace(/\n/g, '<br>');
+
+                    const utterance = new SpeechSynthesisUtterance(aiText);
+                    window.speechSynthesis.speak(utterance);
+                    currentAudioBlob = new Blob([aiText], { type: 'audio/mp3' });
                 }
+            } catch (err) {
+                outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
             }
 
-            // Fallback response if no key or error
-            return `Study Note/Answer for: "${promptText}". (Tip: Set your Google Gemini API key in the top right corner to unlock full live AI doubt solving).`;
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
         }
 
-        // Text To Speech Synthesis
-        function speakText(text) {
-            if (!synth) {
-                alert("Speech synthesis is not supported on this browser.");
-                return;
+        function downloadAudio() {
+            const script = document.getElementById('voice-script').value.trim();
+            if (!script) return alert("Pehle Audio Generate karein!");
+
+            // Create downloadable text-audio stream
+            const element = document.createElement("a");
+            const file = new Blob([script], {type: 'audio/mp3'});
+            element.href = URL.createObjectURL(file);
+            element.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        // Voice Input Recognition
+        function toggleRecording() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                return alert("Aapka browser Speech Recognition support nahi karta. Google Chrome use karein.");
             }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : 'en-US';
 
-            synth.cancel(); // Stop ongoing speech
+            const micBtn = document.getElementById('mic-btn');
+            micBtn.classList.add('text-rose-500', 'animate-pulse');
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = currentLang;
-            utterance.rate = 0.95; // Clear pace for learning
+            recognition.start();
 
-            // Pitch adjustment based on voice persona
-            const persona = document.getElementById('voice-persona').value;
-            if (persona === 'deep') utterance.pitch = 0.7;
-            else if (persona === 'warm') utterance.pitch = 1.1;
-            else utterance.pitch = 1.0;
-
-            utterance.onstart = function() {
-                document.getElementById('player-status').innerText = "Speaking...";
-                document.getElementById('play-icon').className = "fa-solid fa-pause text-xs";
-                document.getElementById('visualizer-placeholder').style.display = 'none';
-                animateVisualizerPlaying();
-                updateStatus("Playing Audio");
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById('voice-script').value += " " + text;
+                micBtn.classList.remove('text-rose-500', 'animate-pulse');
             };
 
-            utterance.onend = function() {
-                resetPlayerUI();
+            recognition.onerror = () => {
+                micBtn.classList.remove('text-rose-500', 'animate-pulse');
             };
-
-            utterance.onerror = function() {
-                resetPlayerUI();
-            };
-
-            currentUtterance = utterance;
-            synth.speak(utterance);
-        }
-
-        function toggleAudioPlayback() {
-            if (synth.speaking) {
-                if (synth.paused) {
-                    synth.resume();
-                    document.getElementById('play-icon').className = "fa-solid fa-pause text-xs";
-                } else {
-                    synth.pause();
-                    document.getElementById('play-icon').className = "fa-solid fa-play text-xs";
-                }
-            } else {
-                const text = document.getElementById('output-content-box').innerText;
-                if (text && !text.includes("Generate speech or ask an AI doubt")) {
-                    speakText(text);
-                }
-            }
-        }
-
-        function stopAudioPlayback() {
-            if (synth) synth.cancel();
-            resetPlayerUI();
-        }
-
-        function resetPlayerUI() {
-            document.getElementById('player-status').innerText = "Idle";
-            document.getElementById('play-icon').className = "fa-solid fa-play text-xs";
-            document.getElementById('visualizer-placeholder').style.display = 'flex';
-            if (visualizerAnimationFrame) cancelAnimationFrame(visualizerAnimationFrame);
-            initVisualizer();
-            updateStatus("Ready");
-        }
-
-        // Simulated Visualizer animation while speaking
-        function animateVisualizerPlaying() {
-            const canvas = document.getElementById('visualizer-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            function render() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const bars = 45;
-                const width = canvas.width / bars;
-
-                for (let i = 0; i < bars; i++) {
-                    const randomHeight = Math.random() * (canvas.height - 15) + 10;
-                    const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
-                    gradient.addColorStop(0, '#4f46e5');
-                    gradient.addColorStop(1, '#818cf8');
-
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(i * width, (canvas.height - randomHeight) / 2, width - 3, randomHeight);
-                }
-
-                visualizerAnimationFrame = requestAnimationFrame(render);
-            }
-            render();
-        }
-
-        // Output Render and Helpers
-        function renderOutputText(htmlContent) {
-            const box = document.getElementById('output-content-box');
-            box.innerHTML = htmlContent;
-        }
-
-        function clearStudioOutput() {
-            document.getElementById('output-content-box').innerHTML = `
-                <div class="text-center text-slate-600 my-auto py-12">
-                    <i class="fa-solid fa-comment-dots text-3xl mb-2 text-slate-700"></i>
-                    <p>Generate speech or ask an AI doubt to see the live transcript and explanation here.</p>
-                </div>`;
-            stopAudioPlayback();
-        }
-
-        function copyOutputText() {
-            const text = document.getElementById('output-content-box').innerText;
-            if(!text) return;
-            navigator.clipboard.writeText(text);
-            updateStatus("Copied to clipboard!");
-            setTimeout(() => updateStatus("Ready"), 2000);
-        }
-
-        function readOutputText() {
-            const text = document.getElementById('output-content-box').innerText;
-            if(text) speakText(text);
-        }
-
-        function updateStatus(msg) {
-            document.getElementById('status-indicator').innerText = msg;
-        }
-
-        // API Key Modal Management
-        function openApiKeyModal() {
-            document.getElementById('api-key-modal').classList.remove('hidden');
-            document.getElementById('api-key-input').value = apiKey;
-        }
-
-        function closeApiKeyModal() {
-            document.getElementById('api-key-modal').classList.add('hidden');
-        }
-
-        function saveApiKey() {
-            const val = document.getElementById('api-key-input').value.trim();
-            apiKey = val;
-            localStorage.setItem('sd_voice_gemini_key', val);
-            updateApiKeyUIStatus();
-            closeApiKeyModal();
-            updateStatus("API Key Saved");
-        }
-
-        function updateApiKeyUIStatus() {
-            const btnText = document.getElementById('key-btn-text');
-            if (apiKey && apiKey.length > 5) {
-                btnText.innerText = "Key Configured ✓";
-            } else {
-                btnText.innerText = "Set API Key";
-            }
         }
     </script>
 </body>
