@@ -1,0 +1,15 @@
+{
+  "name": "SD.VoiceStudio",
+  "short_name": "VoiceStudio",
+  "start_url": "/SD.VoiceStudio/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/4712/4712109.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
