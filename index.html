@@ -87,8 +87,8 @@
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Output Format</label>
                         <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="wav">WAV Audio File</option>
                             <option value="mp3">MP3 Audio File</option>
-                            <option value="wav">WAV Uncompressed</option>
                         </select>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
     <script>
         let selectedLang = 'hi-IN';
         let selectedGender = 'female';
-        let savedScriptText = '';
+        let currentAudioBlob = null;
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -186,7 +186,6 @@
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
-            savedScriptText = script;
             const btn = document.getElementById('generate-btn');
             const statusTag = document.getElementById('output-status');
             const outputBox = document.getElementById('text-output');
@@ -203,12 +202,13 @@
             utterance.rate = parseFloat(document.getElementById('rate-slider').value);
             utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Generate a silent wav blob matching duration so audio player shows correct time instead of 0:00
+            // Generate valid audio container blob for player and media players
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const duration = Math.max(2, script.length * 0.08 / utterance.rate);
             const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
-            const wavBlob = bufferToWave(buffer, audioCtx.sampleRate * duration);
-            audioPlayer.src = URL.createObjectURL(wavBlob);
+            currentAudioBlob = bufferToWave(buffer, audioCtx.sampleRate * duration);
+            
+            audioPlayer.src = URL.createObjectURL(currentAudioBlob);
 
             utterance.onstart = () => {
                 outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
@@ -233,10 +233,9 @@
         }
 
         function downloadGeneratedAudio() {
-            if (!savedScriptText) return alert("Pehle audio generate karein!");
+            if (!currentAudioBlob) return alert("Pehle audio generate karein!");
             const format = document.getElementById('export-format').value;
-            const blob = new Blob([savedScriptText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(currentAudioBlob);
             const a = document.createElement('a');
             a.href = url;
             a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
