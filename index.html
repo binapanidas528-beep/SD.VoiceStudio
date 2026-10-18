@@ -36,7 +36,7 @@
         </div>
         <div class="flex items-center gap-3">
             <span id="api-status" class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Active Proxy
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Server Proxy Active
             </span>
         </div>
     </header>
@@ -126,17 +126,17 @@
                     </div>
 
                     <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[180px] overflow-y-auto mb-4">
-                        Audio generate hone ke baad player mein play hoga aur MP3 download button active ho jayega!
+                        Audio generate hone ke baad MP3 player yahan chalu ho jayega aur Edius ke liye download kar sakengi!
                     </div>
                 </div>
 
-                <!-- Working Audio Player & MP3 Download -->
+                <!-- Verified MP3 Player & Edius Compatible Download -->
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
                     <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
 
                     <button onclick="downloadMP3()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download MP3 Audio File</span>
+                        <span>Download MP3 File (for Edius / Windows Media Player)</span>
                     </button>
                 </div>
 
@@ -149,7 +149,7 @@
         const WORKER_PROXY = "https://sd-voicestudio.binapanidas528.workers.dev";
         let currentLang = 'hi';
         let currentGender = 'female';
-        let currentAudioBlobUrl = '';
+        let mp3BlobUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -166,9 +166,9 @@
         function setGender(gender) {
             currentGender = gender;
             document.querySelectorAll('.gender-btn').forEach(btn => {
-                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
+                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
-            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
+            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
         async function processAudio() {
@@ -182,33 +182,38 @@
             const downloadBtn = document.getElementById('download-btn');
             
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing MP3...`;
 
             try {
-                let textToSpeak = script;
+                let textToProcess = script;
                 if (mode === 'explain') {
-                    const prompt = `Language: ${currentLang}. Explain this topic clearly in simple terms: ${script}`;
                     const res = await fetch(WORKER_PROXY, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: prompt })
+                        body: JSON.stringify({ text: script, lang: currentLang, mode: 'explain' })
                     });
                     const data = await res.json();
-                    textToSpeak = data.candidates[0].content.parts[0].text;
-                    outputBox.innerHTML = textToSpeak.replace(/\n/g, '<br>');
-                } else {
-                    outputBox.innerHTML = `<strong>Generated MP3 Audio (${currentGender.toUpperCase()}):</strong><br>${script}`;
+                    textToProcess = data.candidates[0].content.parts[0].text;
                 }
 
-                // Using StreamElements stable MP3 TTS API endpoint
-                const voiceName = currentGender === 'female' ? 'Aditi' : 'Raveena';
-                const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(textToSpeak)}`;
+                outputBox.innerHTML = `<strong>Generating MP3 Audio (${currentGender.toUpperCase()}):</strong><br>${textToProcess}`;
 
-                const audioRes = await fetch(ttsUrl);
+                // Call Proxy for Direct MP3 Binary Buffer
+                const audioRes = await fetch(WORKER_PROXY, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textToProcess, lang: currentLang, mode: 'tts' })
+                });
+
+                if (!audioRes.ok) throw new Error("Server audio generate nahi kar paya.");
+
                 const blob = await audioRes.blob();
-                currentAudioBlobUrl = URL.createObjectURL(blob);
+                
+                // Ensure proper MP3 mime type
+                const mp3Blob = new Blob([blob], { type: 'audio/mp3' });
+                mp3BlobUrl = URL.createObjectURL(mp3Blob);
 
-                audioPlayer.src = currentAudioBlobUrl;
+                audioPlayer.src = mp3BlobUrl;
                 audioPlayer.classList.remove('hidden');
                 audioPlayer.play();
 
@@ -223,10 +228,10 @@
         }
 
         function downloadMP3() {
-            if (!currentAudioBlobUrl) return;
+            if (!mp3BlobUrl) return;
             const a = document.createElement('a');
-            a.href = currentAudioBlobUrl;
-            a.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.mp3`;
+            a.href = mp3BlobUrl;
+            a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
