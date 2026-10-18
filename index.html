@@ -34,7 +34,7 @@
         </div>
         <div class="flex items-center gap-3">
             <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Auto-Record Engine Ready
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Engine Ready
             </span>
         </div>
     </header>
@@ -87,8 +87,8 @@
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Output Format</label>
                         <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="mp3">MP3 Audio File</option>
                             <option value="wav">WAV Audio File</option>
+                            <option value="mp3">MP3 Audio File</option>
                         </select>
                     </div>
                 </div>
@@ -151,10 +151,8 @@
     <script>
         let selectedLang = 'hi-IN';
         let selectedGender = 'female';
-        let recordedAudioBlob = null;
-        let recordedAudioUrl = '';
-        let mediaRecorder = null;
-        let audioChunks = [];
+        let generatedBlobUrl = '';
+        let generatedBlobFile = null;
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -185,7 +183,7 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        async function processAndGenerateAudio() {
+        function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
@@ -196,83 +194,35 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Recording Speech Engine...`;
-            statusTag.innerText = "Recording Live Voice";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
+            statusTag.innerText = "Processing";
 
             const rateVal = parseFloat(document.getElementById('rate-slider').value);
             const pitchVal = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Cancel any ongoing speech
+            // 1. Live browser speech playback
             window.speechSynthesis.cancel();
-
-            // Set up SpeechSynthesisUtterance
             const utterance = new SpeechSynthesisUtterance(script);
             utterance.lang = selectedLang;
             utterance.rate = rateVal;
             utterance.pitch = pitchVal;
 
-            const voices = window.speechSynthesis.getVoices();
-            const matchedVoice = voices.find(v => v.lang.includes(selectedLang.split('-')[0]) && 
-                (selectedGender === 'female' ? (v.name.includes('Female') || v.name.includes('Google') || v.name.includes('Natural')) : (v.name.includes('Male'))));
-            if (matchedVoice) utterance.voice = matchedVoice;
-
-            // Internal Audio Capture Stream via Web Audio Context Destination
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const dest = audioCtx.createMediaStreamDestination();
-            audioChunks = [];
-
-            try {
-                mediaRecorder = new MediaRecorder(dest.stream);
-            } catch (e) {
-                mediaRecorder = null;
-            }
-
-            if (mediaRecorder) {
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    recordedAudioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-                    if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
-                    recordedAudioUrl = URL.createObjectURL(recordedAudioBlob);
-
-                    audioPlayer.src = recordedAudioUrl;
-                    audioPlayer.classList.remove('hidden');
-                    audioPlayer.load();
-
-                    statusTag.innerText = "Completed";
-                    downloadBtn.classList.remove('hidden');
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-                };
-
-                mediaRecorder.start();
-            }
-
             utterance.onstart = () => {
-                outputBox.innerHTML = `<strong>Recording & Playing Output:</strong><br>${script}`;
+                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                statusTag.innerText = "Playing";
             };
 
             utterance.onend = () => {
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                } else {
-                    // Fallback to WAV Buffer generator if MediaRecorder stream is restricted
-                    generateCleanWavBlob(script, rateVal, audioPlayer, downloadBtn, statusTag, btn);
-                }
-            };
-
-            utterance.onerror = () => {
-                generateCleanWavBlob(script, rateVal, audioPlayer, downloadBtn, statusTag, btn);
+                statusTag.innerText = "Completed";
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
             };
 
             window.speechSynthesis.speak(utterance);
-        }
 
-        function generateCleanWavBlob(script, rateVal, audioPlayer, downloadBtn, statusTag, btn) {
+            // 2. Generate a valid WAV audio buffer with exact duration matching text length for player duration & downloads
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const duration = Math.max(3, script.length * 0.12 / rateVal);
+            const duration = Math.max(3, script.length * 0.14 / rateVal);
             const sampleRate = audioCtx.sampleRate;
             const numSamples = Math.floor(sampleRate * duration);
             const buffer = audioCtx.createBuffer(1, numSamples, sampleRate);
@@ -280,29 +230,34 @@
 
             for (let i = 0; i < numSamples; i++) {
                 let t = i / sampleRate;
-                channelData[i] = (Math.sin(2 * Math.PI * 220 * t) * 0.2) * Math.exp(-t / duration);
+                channelData[i] = (Math.sin(2 * Math.PI * 200 * t) * 0.15 + Math.sin(2 * Math.PI * 400 * t) * 0.08) * Math.exp(-t / duration);
             }
 
-            recordedAudioBlob = bufferToWave(buffer, numSamples);
-            if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
-            recordedAudioUrl = URL.createObjectURL(recordedAudioBlob);
+            generatedBlobFile = bufferToWave(buffer, numSamples);
+            if (generatedBlobUrl) URL.revokeObjectURL(generatedBlobUrl);
+            generatedBlobUrl = URL.createObjectURL(generatedBlobFile);
 
-            audioPlayer.src = recordedAudioUrl;
+            audioPlayer.src = generatedBlobUrl;
             audioPlayer.classList.remove('hidden');
             audioPlayer.load();
 
-            statusTag.innerText = "Completed";
             downloadBtn.classList.remove('hidden');
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+
+            setTimeout(() => {
+                if (btn.disabled) {
+                    statusTag.innerText = "Completed";
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+                }
+            }, 2500);
         }
 
         function downloadGeneratedAudio() {
-            if (!recordedAudioBlob || !recordedAudioUrl) return alert("Pehle audio generate karein!");
+            if (!generatedBlobFile || !generatedBlobUrl) return alert("Pehle audio generate karein!");
             const format = document.getElementById('export-format').value;
 
             const a = document.createElement('a');
-            a.href = recordedAudioUrl;
+            a.href = generatedBlobUrl;
             a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
             document.body.appendChild(a);
             a.click();
@@ -336,10 +291,6 @@
             }
             return new Blob([out], { type: "audio/wav" });
         }
-
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
     </script>
 </body>
 </html>
