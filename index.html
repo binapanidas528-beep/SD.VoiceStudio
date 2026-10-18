@@ -150,7 +150,8 @@
     <script>
         let selectedLang = 'hi';
         let selectedGender = 'female';
-        let directAudioUrl = '';
+        let resolvedBlobUrl = '';
+        let activeBlob = null;
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -180,7 +181,7 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function processAndGenerateAudio() {
+        async function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
@@ -191,37 +192,53 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
             statusTag.innerText = "Processing";
 
-            directAudioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
 
-            outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-            
-            audioPlayer.src = directAudioUrl;
-            audioPlayer.classList.remove('hidden');
-            audioPlayer.load();
+            try {
+                // Fetching the MP3 binary data so browser accurately calculates and displays track duration
+                const response = await fetch(ttsUrl);
+                if (!response.ok) throw new Error("Audio generation failed");
 
-            audioPlayer.play().then(() => {
+                activeBlob = await response.blob();
+                if (resolvedBlobUrl) URL.revokeObjectURL(resolvedBlobUrl);
+                resolvedBlobUrl = URL.createObjectURL(activeBlob);
+
+                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                
+                audioPlayer.src = resolvedBlobUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.load();
+
+                // Automatically play audio and finalize status
+                await audioPlayer.play();
+
                 statusTag.innerText = "Completed";
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            }).catch(err => {
+                downloadBtn.classList.remove('hidden');
+            } catch (err) {
+                // Fallback direct source assignment if CORS blocks direct blob fetch
+                audioPlayer.src = ttsUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.load();
+                
+                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
                 statusTag.innerText = "Completed";
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            });
+                downloadBtn.classList.remove('hidden');
+            }
 
-            downloadBtn.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
         }
 
         function downloadGeneratedAudio() {
-            if (!directAudioUrl) return alert("Pehle audio generate karein!");
+            if (!resolvedBlobUrl && !activeBlob) return alert("Pehle audio generate karein!");
 
+            const downloadUrl = resolvedBlobUrl || URL.createObjectURL(activeBlob);
             const a = document.createElement('a');
-            a.href = directAudioUrl;
+            a.href = downloadUrl;
             a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
-            a.target = '_blank';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
