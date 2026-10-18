@@ -108,7 +108,7 @@
 
                 <button onclick="processAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate & Play Audio</span>
+                    <span>Generate MP3 Audio</span>
                 </button>
             </div>
         </section>
@@ -126,25 +126,18 @@
                     </div>
 
                     <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[180px] overflow-y-auto mb-4">
-                        "Generate & Play Audio" button dabate hi awaz play hogi aur download button active ho jayega!
+                        Audio generate hone ke baad player mein play hoga aur MP3 download button active ho jayega!
                     </div>
                 </div>
 
-                <!-- Audio Controls & Download -->
+                <!-- Working Audio Player & MP3 Download -->
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
-                    <div class="flex gap-3">
-                        <button onclick="stopAudio()" class="flex-1 bg-rose-600/20 border border-rose-500/30 hover:bg-rose-600/30 text-rose-400 font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-square"></i> Stop
-                        </button>
-                        <button onclick="replayAudio()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
-                            <i class="fa-solid fa-rotate-right"></i> Replay
-                        </button>
-                    </div>
+                    <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
 
-                    <a id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer">
+                    <button onclick="downloadMP3()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download Audio File for Edius</span>
-                    </a>
+                        <span>Download MP3 Audio File</span>
+                    </button>
                 </div>
 
             </div>
@@ -156,7 +149,7 @@
         const WORKER_PROXY = "https://sd-voicestudio.binapanidas528.workers.dev";
         let currentLang = 'hi';
         let currentGender = 'female';
-        let lastTextToSpeak = '';
+        let currentAudioBlobUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -178,22 +171,6 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function speakText(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
-
-            if (currentGender === 'female') {
-                utterance.pitch = 1.2;
-                utterance.rate = 1.0;
-            } else {
-                utterance.pitch = 0.8;
-                utterance.rate = 0.9;
-            }
-
-            window.speechSynthesis.speak(utterance);
-        }
-
         async function processAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya script ya text enter karein!");
@@ -201,12 +178,14 @@
             const mode = document.getElementById('action-mode').value;
             const btn = document.getElementById('generate-btn');
             const outputBox = document.getElementById('text-output');
+            const audioPlayer = document.getElementById('audio-player');
             const downloadBtn = document.getElementById('download-btn');
             
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
 
             try {
+                let textToSpeak = script;
                 if (mode === 'explain') {
                     const prompt = `Language: ${currentLang}. Explain this topic clearly in simple terms: ${script}`;
                     const res = await fetch(WORKER_PROXY, {
@@ -215,21 +194,24 @@
                         body: JSON.stringify({ prompt: prompt })
                     });
                     const data = await res.json();
-                    lastTextToSpeak = data.candidates[0].content.parts[0].text;
-                    outputBox.innerHTML = lastTextToSpeak.replace(/\n/g, '<br>');
+                    textToSpeak = data.candidates[0].content.parts[0].text;
+                    outputBox.innerHTML = textToSpeak.replace(/\n/g, '<br>');
                 } else {
-                    lastTextToSpeak = script;
-                    outputBox.innerHTML = `<strong>Playing (${currentGender.toUpperCase()}):</strong><br>${script}`;
+                    outputBox.innerHTML = `<strong>Generated MP3 Audio (${currentGender.toUpperCase()}):</strong><br>${script}`;
                 }
 
-                speakText(lastTextToSpeak);
+                // Using StreamElements stable MP3 TTS API endpoint
+                const voiceName = currentGender === 'female' ? 'Aditi' : 'Raveena';
+                const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(textToSpeak)}`;
 
-                // Create a silent audio blob container as a fallback download for video editing
-                const dummyBlob = new Blob([lastTextToSpeak], { type: 'text/plain' });
-                const blobUrl = URL.createObjectURL(dummyBlob);
-                downloadBtn.href = blobUrl;
-                downloadBtn.download = `SD_Voice_${currentGender}_${Date.now()}.txt`;
-                downloadBtn.querySelector('span').innerText = `Save Script / Audio Data`;
+                const audioRes = await fetch(ttsUrl);
+                const blob = await audioRes.blob();
+                currentAudioBlobUrl = URL.createObjectURL(blob);
+
+                audioPlayer.src = currentAudioBlobUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.play();
+
                 downloadBtn.classList.remove('hidden');
 
             } catch (err) {
@@ -237,19 +219,17 @@
             }
 
             btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate & Play Audio</span>`;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate MP3 Audio</span>`;
         }
 
-        function stopAudio() {
-            window.speechSynthesis.cancel();
-        }
-
-        function replayAudio() {
-            if (lastTextToSpeak) {
-                speakText(lastTextToSpeak);
-            } else {
-                alert("Pehle audio generate karein!");
-            }
+        function downloadMP3() {
+            if (!currentAudioBlobUrl) return;
+            const a = document.createElement('a');
+            a.href = currentAudioBlobUrl;
+            a.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function toggleRecording() {
