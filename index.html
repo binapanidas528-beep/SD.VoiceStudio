@@ -36,7 +36,7 @@
         </div>
         <div class="flex items-center gap-3">
             <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Ready Mode
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> MP3 Ready
             </span>
         </div>
     </header>
@@ -66,7 +66,7 @@
                         <span id="char-count" class="text-[10px] text-slate-500">0 chars</span>
                     </label>
                     <div class="relative">
-                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none" placeholder="Apna content ya question yahan likhein..."></textarea>
+                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none" placeholder="Apna text yahan likhein (e.g. Namaste, aap kaise hain?)..."></textarea>
                         <button onclick="toggleRecording()" id="mic-btn" class="absolute right-3 bottom-3 w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition border border-slate-700" title="Voice Input">
                             <i class="fa-solid fa-microphone"></i>
                         </button>
@@ -98,9 +98,9 @@
                     </div>
                 </div>
 
-                <button onclick="generateAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                <button onclick="generateMP3Audio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate & Play Voice</span>
+                    <span>Generate MP3 Audio File</span>
                 </button>
             </div>
         </section>
@@ -112,30 +112,23 @@
                 <div>
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
                         <h2 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
-                            <i class="fa-solid fa-robot"></i> AI Studio Output
+                            <i class="fa-solid fa-robot"></i> AI Studio MP3 Output
                         </h2>
                         <span id="output-badge" class="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Ready</span>
                     </div>
 
-                    <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[180px] overflow-y-auto mb-4">
-                        Text enter karke "Generate & Play Voice" dabayein. Awaz play hogi aur direct download button mil jayega!
+                    <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[160px] overflow-y-auto mb-4">
+                        Text likh kar "Generate MP3 Audio File" dabayein. Player mein audio play hoga aur download button se asli MP3 file milegi!
                     </div>
                 </div>
 
-                <!-- Player & Download Panel -->
+                <!-- Working Audio Player & MP3 Download Panel -->
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
-                    <div class="flex gap-3">
-                        <button onclick="stopAudio()" class="flex-1 bg-rose-600/20 border border-rose-500/30 hover:bg-rose-600/30 text-rose-400 font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-square"></i> Stop
-                        </button>
-                        <button onclick="replayAudio()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
-                            <i class="fa-solid fa-rotate-right"></i> Replay
-                        </button>
-                    </div>
+                    <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
 
-                    <button onclick="downloadAudioFile()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <button onclick="downloadMP3File()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download Audio File (for Edius 7 / Media Player)</span>
+                        <span>Download MP3 Audio File (Winamp / Media Player / Android)</span>
                     </button>
                 </div>
 
@@ -147,7 +140,7 @@
     <script>
         let currentLang = 'hi';
         let currentGender = 'female';
-        let lastText = '';
+        let mp3AudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -169,62 +162,57 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function speakText(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
-
-            if (currentGender === 'female') {
-                utterance.pitch = 1.3;
-                utterance.rate = 1.0;
-            } else {
-                utterance.pitch = 0.8;
-                utterance.rate = 0.9;
-            }
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function generateAudio() {
+        async function generateMP3Audio() {
             const script = document.getElementById('voice-script').value.trim();
-            if (!script) return alert("Kripya script ya text enter karein!");
+            if (!script) return alert("Kripya text ya script enter karein!");
 
-            lastText = script;
+            const btn = document.getElementById('generate-btn');
             const outputBox = document.getElementById('text-output');
+            const audioPlayer = document.getElementById('audio-player');
             const downloadBtn = document.getElementById('download-btn');
 
-            outputBox.innerHTML = `<strong>Playing Voice (${currentGender.toUpperCase()}):</strong><br>${script}`;
-            speakText(script);
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
 
-            downloadBtn.classList.remove('hidden');
-        }
+            try {
+                // Select proper voice mapping for StreamElements API
+                let voice = currentGender === 'female' ? 'Aditi' : 'Raveena';
+                if (currentLang === 'en') voice = currentGender === 'female' ? 'Emma' : 'Brian';
+                else if (currentLang === 'bn') voice = 'Tanusree';
 
-        function stopAudio() {
-            window.speechSynthesis.cancel();
-        }
+                const ttsApiUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voice}&text=${encodeURIComponent(script)}`;
 
-        function replayAudio() {
-            if (lastText) {
-                speakText(lastText);
-            } else {
-                alert("Pehle audio generate karein!");
+                const response = await fetch(ttsApiUrl);
+                if (!response.ok) throw new Error("Audio generation failed from server.");
+
+                const blob = await response.blob();
+                mp3AudioUrl = URL.createObjectURL(blob);
+
+                outputBox.innerHTML = `<strong>Generated MP3 Audio (${currentGender.toUpperCase()}, ${currentLang.toUpperCase()}):</strong><br>${script}`;
+                
+                audioPlayer.src = mp3AudioUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.play();
+
+                downloadBtn.classList.remove('hidden');
+
+            } catch (err) {
+                outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}. Kripya dobara try karein.</span>`;
             }
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate MP3 Audio File</span>`;
         }
 
-        function downloadAudioFile() {
-            if (!lastText) return alert("Pehle audio generate karein!");
-            
-            // Create a downloadable text/subtitles/audio project file compatible with editors
-            const blob = new Blob([lastText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+        function downloadMP3File() {
+            if (!mp3AudioUrl) return alert("Pehle MP3 audio generate karein!");
+
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `SD_VoiceStudio_Project_${Date.now()}.txt`;
+            a.href = mp3AudioUrl;
+            a.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.mp3`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            
-            alert("Script file download ho gayi hai! Aap ise Edius 7 mein subtitles ya script ke roop mein use kar sakti hain.");
         }
 
         function toggleRecording() {
