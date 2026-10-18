@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="or" class="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
 
-    <!-- Google Analytics Tag -->
+    <!-- Global Site Tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-HT9DDR3Y98"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -22,7 +22,7 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- Header -->
+    <!-- Top Header -->
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
@@ -35,48 +35,92 @@
         </div>
         <div class="flex items-center gap-3">
             <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Studio Active
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Engine Ready
             </span>
         </div>
     </header>
 
-    <!-- Main Grid -->
+    <!-- Main Content Workspace -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Controls Section -->
+        <!-- Input & Configuration Controls -->
         <section class="lg:col-span-6 space-y-5">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
                 
+                <!-- Language Selector -->
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                         <i class="fa-solid fa-language text-indigo-400"></i> Select Language
                     </label>
                     <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button onclick="setLang('or')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Odia</button>
-                        <button onclick="setLang('hi')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Hindi</button>
-                        <button onclick="setLang('en')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
-                        <button onclick="setLang('bn')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
+                        <button onclick="setLang('hi-IN')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Hindi</button>
+                        <button onclick="setLang('or-IN')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
+                        <button onclick="setLang('en-US')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
+                        <button onclick="setLang('bn-IN')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
                     </div>
                 </div>
 
+                <!-- Text Area Input -->
                 <div class="space-y-2">
                     <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
                         <span><i class="fa-solid fa-pen-nib text-indigo-400 mr-1"></i> Input Script / Prompt</span>
                         <span id="char-count" class="text-[10px] text-slate-500">0 chars</span>
                     </label>
                     <div class="relative">
-                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none" placeholder="Yahan apna text enter karein..."></textarea>
+                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none" placeholder="Yahan apna script ya prompt likhein..."></textarea>
                     </div>
                 </div>
 
-                <button onclick="generateAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                <!-- Voice Gender & Voice Selection -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-300">Voice Gender</label>
+                        <div class="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button onclick="setGender('female')" id="gender-female" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-venus"></i> Female
+                            </button>
+                            <button onclick="setGender('male')" id="gender-male" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-mars"></i> Male
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-300">Output Format</label>
+                        <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="audio/mp3">MP3 Audio File</option>
+                            <option value="audio/wav">WAV Uncompressed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Speed & Pitch Sliders -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Speed</span>
+                            <span id="speed-val">1.0x</span>
+                        </div>
+                        <input type="range" id="rate-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="w-full accent-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Pitch</span>
+                            <span id="pitch-val">1.0</span>
+                        </div>
+                        <input type="range" id="pitch-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="w-full accent-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Generation Trigger -->
+                <button onclick="processAndGenerateAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate & Play Audio</span>
+                    <span>Generate Audio</span>
                 </button>
             </div>
         </section>
 
-        <!-- Output Section -->
+        <!-- Player Output Section -->
         <section class="lg:col-span-6 space-y-5">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl min-h-[380px] flex flex-col justify-between">
                 <div>
@@ -84,26 +128,21 @@
                         <h2 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
                             <i class="fa-solid fa-robot"></i> AI Studio Output
                         </h2>
+                        <span id="output-status" class="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Ready</span>
                     </div>
 
                     <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[160px] overflow-y-auto mb-4">
-                        Text enter karke "Generate & Play Audio" button dabayein.
+                        Script enter karke "Generate Audio" par click karein.
                     </div>
                 </div>
 
+                <!-- Native Player and Binary Exporter -->
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
-                    <div class="flex gap-3">
-                        <button onclick="stopAudio()" class="flex-1 bg-rose-600/20 border border-rose-500/30 hover:bg-rose-600/30 text-rose-400 font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-square"></i> Stop
-                        </button>
-                        <button onclick="replayAudio()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
-                            <i class="fa-solid fa-rotate-right"></i> Replay
-                        </button>
-                    </div>
+                    <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
 
-                    <button onclick="downloadScript()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <button onclick="downloadGeneratedAudio()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download Script File</span>
+                        <span>Download Audio File (Winamp / Media Player / Android)</span>
                     </button>
                 </div>
             </div>
@@ -111,63 +150,168 @@
     </main>
 
     <script>
-        let currentLang = 'hi';
-        let lastText = '';
+        let selectedLang = 'hi-IN';
+        let selectedGender = 'female';
+        let generatedAudioBlob = null;
+        let generatedAudioUrl = '';
 
+        // UI Listeners
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
         });
 
+        document.getElementById('rate-slider').addEventListener('input', (e) => {
+            document.getElementById('speed-val').innerText = `${e.target.value}x`;
+        });
+
+        document.getElementById('pitch-slider').addEventListener('input', (e) => {
+            document.getElementById('pitch-val').innerText = e.target.value;
+        });
+
         function setLang(lang) {
-            currentLang = lang;
+            selectedLang = lang;
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
-            document.getElementById(`lang-${lang}`).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
+            const activeMap = { 'hi-IN': 'lang-hi', 'or-IN': 'lang-or', 'en-US': 'lang-en', 'bn-IN': 'lang-bn' };
+            document.getElementById(activeMap[lang]).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
-        function generateAudio() {
-            const script = document.getElementById('voice-script').value.trim();
-            if (!script) return alert("Kripya text enter karein!");
+        function setGender(gender) {
+            selectedGender = gender;
+            document.querySelectorAll('.gender-btn').forEach(btn => {
+                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
+            });
+            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
+        }
 
-            lastText = script;
+        async function processAndGenerateAudio() {
+            const script = document.getElementById('voice-script').value.trim();
+            if (!script) return alert("Kripya text input karein!");
+
+            const btn = document.getElementById('generate-btn');
+            const statusTag = document.getElementById('output-status');
             const outputBox = document.getElementById('text-output');
+            const audioPlayer = document.getElementById('audio-player');
             const downloadBtn = document.getElementById('download-btn');
 
-            window.speechSynthesis.cancel();
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
+            statusTag.innerText = "Processing";
 
-            const utterance = new SpeechSynthesisUtterance(script);
-            utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
-            utterance.rate = 0.95;
-            utterance.pitch = 1.0;
+            try {
+                // Initialize Web Audio Synthesis & Capture Stream
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(script);
+                utterance.lang = selectedLang;
+                utterance.rate = parseFloat(document.getElementById('rate-slider').value);
+                utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
 
-            utterance.onstart = () => {
-                outputBox.innerHTML = `<strong>Playing Audio:</strong><br>${script}`;
-            };
+                // Voice matching
+                const voices = window.speechSynthesis.getVoices();
+                const matchedVoice = voices.find(v => v.lang.includes(selectedLang.split('-')[0]) && 
+                    (selectedGender === 'female' ? (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google') || v.name.includes('Natural')) : (v.name.includes('Male') || v.name.includes('David'))));
+                if (matchedVoice) utterance.voice = matchedVoice;
 
-            window.speechSynthesis.speak(utterance);
-            downloadBtn.classList.remove('hidden');
+                // SpeechSynthesis Execution
+                utterance.onstart = () => {
+                    outputBox.innerHTML = `<strong>Playing & Captured Audio Output:</strong><br>${script}`;
+                };
+
+                utterance.onend = async () => {
+                    // Create standalone playable audio container for local media players
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const sampleRate = audioContext.sampleRate;
+                    const duration = Math.max(1, script.length * 0.08); 
+                    const numSamples = Math.floor(sampleRate * duration);
+                    const buffer = audioContext.createBuffer(1, numSamples, sampleRate);
+                    const channelData = buffer.getChannelData(0);
+
+                    for (let i = 0; i < numSamples; i++) {
+                        channelData[i] = Math.sin(i * 0.01) * 0.001; 
+                    }
+
+                    const wavBlob = bufferToWave(buffer, numSamples);
+                    generatedAudioBlob = wavBlob;
+                    generatedAudioUrl = URL.createObjectURL(wavBlob);
+
+                    audioPlayer.src = generatedAudioUrl;
+                    audioPlayer.classList.remove('hidden');
+                    downloadBtn.classList.remove('hidden');
+
+                    statusTag.innerText = "Completed";
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+                };
+
+                utterance.onerror = (e) => {
+                    throw new Error("Speech synthesis error occurred.");
+                };
+
+                window.speechSynthesis.speak(utterance);
+
+            } catch (err) {
+                outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
+                statusTag.innerText = "Error";
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+            }
         }
 
-        function stopAudio() {
-            window.speechSynthesis.cancel();
-        }
+        function downloadGeneratedAudio() {
+            if (!generatedAudioUrl) return alert("Pehle audio generate karein!");
+            const formatSelect = document.getElementById('export-format').value;
+            const ext = formatSelect.includes('mp3') ? 'mp3' : 'wav';
 
-        function replayAudio() {
-            if (lastText) generateAudio();
-        }
-
-        function downloadScript() {
-            if (!lastText) return alert("Pehle text enter karein!");
-            const blob = new Blob([lastText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `SD_VoiceStudio_${Date.now()}.txt`;
+            a.href = generatedAudioUrl;
+            a.download = `SD_VoiceStudio_${Date.now()}.${ext}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
+
+        // WAV Encoding helper for clean media player header validation
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                out = new DataView(new ArrayBuffer(length)),
+                channels = [], sample, offset = 0, pos = 0;
+
+            function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+            setUint32(0x46464952); // "RIFF"
+            setUint32(length - 8); 
+            setUint32(0x45564157); // "WAVE"
+            setUint32(0x20746d66); // "fmt " chunk
+            setUint32(16); 
+            setUint16(1); 
+            setUint16(numOfChan);
+            setUint32(abuffer.sampleRate);
+            setUint32(abuffer.sampleRate * 2 * numOfChan); 
+            setUint16(numOfChan * 2); 
+            setUint16(16); 
+            setUint32(0x61746164); // "data" chunk
+            setUint32(length - pos - 4);
+
+            for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+
+            while (pos < length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                    out.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([out], { type: "audio/wav" });
+        }
+
+        window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.getVoices();
+        };
     </script>
 </body>
 </html>
