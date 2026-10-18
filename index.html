@@ -7,7 +7,6 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
 
-    <!-- Global Site Tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-HT9DDR3Y98"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -53,10 +52,10 @@
                         <i class="fa-solid fa-language text-indigo-400"></i> Select Language
                     </label>
                     <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button onclick="setLang('hi-IN')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Hindi</button>
-                        <button onclick="setLang('or-IN')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
-                        <button onclick="setLang('en-US')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
-                        <button onclick="setLang('bn-IN')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
+                        <button onclick="setLang('hi')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Hindi</button>
+                        <button onclick="setLang('or')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
+                        <button onclick="setLang('en')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
+                        <button onclick="setLang('bn')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
                     </div>
                 </div>
 
@@ -88,8 +87,8 @@
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Output Format</label>
                         <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="audio/mp3">MP3 Audio File</option>
-                            <option value="audio/wav">WAV Uncompressed</option>
+                            <option value="mp3">MP3 Audio File</option>
+                            <option value="wav">WAV Uncompressed</option>
                         </select>
                     </div>
                 </div>
@@ -150,12 +149,11 @@
     </main>
 
     <script>
-        let selectedLang = 'hi-IN';
-        let selectedGender = 'female';
+        let currentLang = 'hi';
+        let currentGender = 'female';
         let generatedAudioBlob = null;
         let generatedAudioUrl = '';
 
-        // UI Listeners
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
         });
@@ -169,16 +167,15 @@
         });
 
         function setLang(lang) {
-            selectedLang = lang;
+            currentLang = lang;
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
-            const activeMap = { 'hi-IN': 'lang-hi', 'or-IN': 'lang-or', 'en-US': 'lang-en', 'bn-IN': 'lang-bn' };
-            document.getElementById(activeMap[lang]).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
+            document.getElementById(`lang-${lang}`).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
         function setGender(gender) {
-            selectedGender = gender;
+            currentGender = gender;
             document.querySelectorAll('.gender-btn').forEach(btn => {
                 btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
             });
@@ -199,119 +196,46 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Processing";
 
+            let voiceName = currentGender === 'male' ? 'Raveena' : 'Aditi';
+            if (currentLang === 'en') voiceName = currentGender === 'male' ? 'Brian' : 'Emma';
+            else if (currentLang === 'bn') voiceName = 'Tanusree';
+
+            const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(script)}`;
+
             try {
-                // Initialize Web Audio Synthesis & Capture Stream
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(script);
-                utterance.lang = selectedLang;
-                utterance.rate = parseFloat(document.getElementById('rate-slider').value);
-                utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
+                const response = await fetch(ttsUrl);
+                if (!response.ok) throw new Error("Audio generation failed");
 
-                // Voice matching
-                const voices = window.speechSynthesis.getVoices();
-                const matchedVoice = voices.find(v => v.lang.includes(selectedLang.split('-')[0]) && 
-                    (selectedGender === 'female' ? (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google') || v.name.includes('Natural')) : (v.name.includes('Male') || v.name.includes('David'))));
-                if (matchedVoice) utterance.voice = matchedVoice;
+                const blob = await response.blob();
+                generatedAudioBlob = blob;
+                generatedAudioUrl = URL.createObjectURL(blob);
 
-                // SpeechSynthesis Execution
-                utterance.onstart = () => {
-                    outputBox.innerHTML = `<strong>Playing & Captured Audio Output:</strong><br>${script}`;
-                };
+                outputBox.innerHTML = `<strong>Playing & Audio Output:</strong><br>${script}`;
+                audioPlayer.src = generatedAudioUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.play();
 
-                utterance.onend = async () => {
-                    // Create standalone playable audio container for local media players
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const sampleRate = audioContext.sampleRate;
-                    const duration = Math.max(1, script.length * 0.08); 
-                    const numSamples = Math.floor(sampleRate * duration);
-                    const buffer = audioContext.createBuffer(1, numSamples, sampleRate);
-                    const channelData = buffer.getChannelData(0);
-
-                    for (let i = 0; i < numSamples; i++) {
-                        channelData[i] = Math.sin(i * 0.01) * 0.001; 
-                    }
-
-                    const wavBlob = bufferToWave(buffer, numSamples);
-                    generatedAudioBlob = wavBlob;
-                    generatedAudioUrl = URL.createObjectURL(wavBlob);
-
-                    audioPlayer.src = generatedAudioUrl;
-                    audioPlayer.classList.remove('hidden');
-                    downloadBtn.classList.remove('hidden');
-
-                    statusTag.innerText = "Completed";
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-                };
-
-                utterance.onerror = (e) => {
-                    throw new Error("Speech synthesis error occurred.");
-                };
-
-                window.speechSynthesis.speak(utterance);
-
+                downloadBtn.classList.remove('hidden');
+                statusTag.innerText = "Completed";
             } catch (err) {
                 outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
                 statusTag.innerText = "Error";
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
             }
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
         }
 
         function downloadGeneratedAudio() {
             if (!generatedAudioUrl) return alert("Pehle audio generate karein!");
-            const formatSelect = document.getElementById('export-format').value;
-            const ext = formatSelect.includes('mp3') ? 'mp3' : 'wav';
-
+            const format = document.getElementById('export-format').value;
             const a = document.createElement('a');
             a.href = generatedAudioUrl;
-            a.download = `SD_VoiceStudio_${Date.now()}.${ext}`;
+            a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
-
-        // WAV Encoding helper for clean media player header validation
-        function bufferToWave(abuffer, len) {
-            let numOfChan = abuffer.numberOfChannels,
-                length = len * numOfChan * 2 + 44,
-                out = new DataView(new ArrayBuffer(length)),
-                channels = [], sample, offset = 0, pos = 0;
-
-            function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
-            function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
-
-            setUint32(0x46464952); // "RIFF"
-            setUint32(length - 8); 
-            setUint32(0x45564157); // "WAVE"
-            setUint32(0x20746d66); // "fmt " chunk
-            setUint32(16); 
-            setUint16(1); 
-            setUint16(numOfChan);
-            setUint32(abuffer.sampleRate);
-            setUint32(abuffer.sampleRate * 2 * numOfChan); 
-            setUint16(numOfChan * 2); 
-            setUint16(16); 
-            setUint32(0x61746164); // "data" chunk
-            setUint32(length - pos - 4);
-
-            for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
-
-            while (pos < length) {
-                for (let i = 0; i < numOfChan; i++) {
-                    sample = Math.max(-1, Math.min(1, channels[i][offset]));
-                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
-                    out.setInt16(pos, sample, true);
-                    pos += 2;
-                }
-                offset++;
-            }
-            return new Blob([out], { type: "audio/wav" });
-        }
-
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
     </script>
 </body>
 </html>
