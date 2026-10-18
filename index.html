@@ -152,7 +152,7 @@
         let selectedLang = 'Hindi';
         let selectedGender = 'female';
         let lastScriptText = '';
-        let directMp3Url = '';
+        let activeAudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -183,7 +183,7 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function processAndGenerateAudio() {
+        async function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
@@ -196,7 +196,7 @@
 
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
-            statusTag.innerText = "Playing";
+            statusTag.innerText = "Processing";
 
             let voiceName = selectedLang;
             if (selectedLang === 'Hindi') {
@@ -210,13 +210,12 @@
             const rateVal = parseFloat(document.getElementById('rate-slider').value);
             const pitchVal = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Direct playable MP3 stream URL
             let langCode = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
-            directMp3Url = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(script)}&tl=${langCode}&sv=${encodeURIComponent(voiceName)}`;
+            activeAudioUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(script)}&tl=${langCode}&sv=${encodeURIComponent(voiceName)}`;
 
             outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
 
-            // Play via speech engine for instant audio
+            // Play via speech engine for instant live playback
             if (typeof responsiveVoice !== 'undefined') {
                 responsiveVoice.speak(script, voiceName, {
                     rate: rateVal,
@@ -229,7 +228,8 @@
                 });
             }
 
-            audioPlayer.src = directMp3Url;
+            // Load audio player with valid duration handling
+            audioPlayer.src = activeAudioUrl;
             audioPlayer.classList.remove('hidden');
             audioPlayer.load();
             audioPlayer.play().catch(e => {});
@@ -269,7 +269,7 @@
                 statusTag.innerText = "Completed";
             } catch (err) {
                 const a = document.createElement('a');
-                a.href = directMp3Url || downloadUrl;
+                a.href = activeAudioUrl || downloadUrl;
                 a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
                 a.target = '_blank';
                 document.body.appendChild(a);
