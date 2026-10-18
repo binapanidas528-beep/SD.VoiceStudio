@@ -33,7 +33,7 @@
         </div>
         <div class="flex items-center gap-3">
             <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> MP3 Generator Live
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Direct MP3 Engine Active
             </span>
         </div>
     </header>
@@ -64,21 +64,9 @@
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
-                    <label class="text-xs font-semibold text-slate-300">Voice Gender</label>
-                    <div class="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button onclick="setGender('female')" id="gender-female" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-venus"></i> Female
-                        </button>
-                        <button onclick="setGender('male')" id="gender-male" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-mars"></i> Male
-                        </button>
-                    </div>
-                </div>
-
-                <button onclick="generateMP3()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                <button onclick="generateDirectMP3()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate MP3 Audio File</span>
+                    <span>Generate & Play MP3 Audio</span>
                 </button>
             </div>
         </section>
@@ -93,16 +81,16 @@
                     </div>
 
                     <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[160px] overflow-y-auto mb-4">
-                        Text likh kar "Generate MP3 Audio File" dabayein!
+                        Text enter karke "Generate & Play MP3 Audio" button dabayein!
                     </div>
                 </div>
 
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
                     <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
 
-                    <button onclick="downloadMP3()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <button onclick="downloadMP3File()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download MP3 Audio File (Media Player / Winamp / Android)</span>
+                        <span>Download Real MP3 (Media Player / Winamp / Android)</span>
                     </button>
                 </div>
             </div>
@@ -110,10 +98,9 @@
     </main>
 
     <script>
-        const WORKER_URL = "https://sd-voicestudio.binapanidas528.workers.dev";
         let currentLang = 'hi';
-        let currentGender = 'female';
-        let mp3BlobUrl = '';
+        let mp3AudioBlob = null;
+        let mp3Url = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -127,15 +114,7 @@
             document.getElementById(`lang-${lang}`).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
-        function setGender(gender) {
-            currentGender = gender;
-            document.querySelectorAll('.gender-btn').forEach(btn => {
-                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
-            });
-            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
-        }
-
-        async function generateMP3() {
+        async function generateDirectMP3() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text enter karein!");
 
@@ -145,42 +124,66 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3 Audio...`;
 
             try {
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: script, lang: currentLang, gender: currentGender })
-                });
+                // Direct Google TTS Engine audio stream URL
+                const targetLang = currentLang === 'hi' ? 'hi' : currentLang === 'or' ? 'or' : currentLang === 'bn' ? 'bn' : 'en';
+                const gTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${targetLang}&client=tw-ob`;
 
-                if (!response.ok) throw new Error("Audio generation failed from worker.");
+                const res = await fetch(gTtsUrl);
+                if (!res.ok) throw new Error("Audio stream build failed.");
 
-                const blob = await response.blob();
-                mp3BlobUrl = URL.createObjectURL(blob);
+                const arrayBuffer = await res.arrayBuffer();
+                mp3AudioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+                mp3Url = URL.createObjectURL(mp3AudioBlob);
 
                 outputBox.innerHTML = `<strong>MP3 Generated Successfully:</strong><br>${script}`;
-                audioPlayer.src = mp3BlobUrl;
+                
+                audioPlayer.src = mp3Url;
                 audioPlayer.classList.remove('hidden');
                 audioPlayer.play();
 
                 downloadBtn.classList.remove('hidden');
+
             } catch (err) {
-                outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}. Kripya dobara try karein.</span>`;
+                // Fallback direct URL player if fetch is constrained
+                const targetLang = currentLang === 'hi' ? 'hi' : currentLang === 'or' ? 'or' : currentLang === 'bn' ? 'bn' : 'en';
+                mp3Url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${targetLang}&client=tw-ob`;
+                
+                audioPlayer.src = mp3Url;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.play();
+
+                outputBox.innerHTML = `<strong>MP3 Playing:</strong><br>${script}`;
+                downloadBtn.classList.remove('hidden');
             }
 
             btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate MP3 Audio File</span>`;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate & Play MP3 Audio</span>`;
         }
 
-        function downloadMP3() {
-            if (!mp3BlobUrl) return;
-            const a = document.createElement('a');
-            a.href = mp3BlobUrl;
-            a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+        async function downloadMP3File() {
+            if (!mp3Url) return alert("Pehle MP3 generate karein!");
+
+            if (mp3AudioBlob) {
+                const a = document.createElement('a');
+                a.href = mp3Url;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                const res = await fetch(mp3Url);
+                const blob = await res.blob();
+                const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'audio/mpeg' }));
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
         }
     </script>
 </body>
