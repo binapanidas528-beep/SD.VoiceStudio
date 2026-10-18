@@ -192,17 +192,19 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Real MP3 Audio...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Processing";
 
-            try {
-                // Fetch direct binary stream via cloud proxy
-                const workerUrl = `/api/tts?text=${encodeURIComponent(script)}&lang=${selectedLang}&gender=${selectedGender}`;
-                const response = await fetch(workerUrl);
+            let voiceName = selectedGender === 'male' ? 'Raveena' : 'Aditi';
+            if (selectedLang === 'en') voiceName = selectedGender === 'male' ? 'Brian' : 'Emma';
+            if (selectedLang === 'bn') voiceName = 'Tanusree';
+            if (selectedLang === 'or') voiceName = 'Aditi';
 
-                if (!response.ok) {
-                    throw new Error("Worker endpoint fetch failed");
-                }
+            const audioUrl = `https://corsproxy.io/?` + encodeURIComponent(`https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(script)}`);
+
+            try {
+                const response = await fetch(audioUrl);
+                if (!response.ok) throw new Error("Audio generation failed");
 
                 currentAudioBlob = await response.blob();
                 if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
@@ -217,30 +219,8 @@
                 downloadBtn.classList.remove('hidden');
                 statusTag.innerText = "Completed";
             } catch (err) {
-                // Direct Stream fallback if worker route isn't hit directly
-                let voiceName = selectedGender === 'male' ? 'Raveena' : 'Aditi';
-                if (selectedLang === 'en') voiceName = selectedGender === 'male' ? 'Brian' : 'Emma';
-                
-                const fallbackUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(script)}`;
-                
-                try {
-                    const fbRes = await fetch(fallbackUrl);
-                    currentAudioBlob = await fbRes.blob();
-                    if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
-                    currentAudioUrl = URL.createObjectURL(currentAudioBlob);
-
-                    outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-                    audioPlayer.src = currentAudioUrl;
-                    audioPlayer.classList.remove('hidden');
-                    audioPlayer.load();
-                    await audioPlayer.play();
-
-                    downloadBtn.classList.remove('hidden');
-                    statusTag.innerText = "Completed";
-                } catch(e) {
-                    outputBox.innerHTML = `<span class="text-rose-400">Error generating audio stream. Please retry.</span>`;
-                    statusTag.innerText = "Error";
-                }
+                outputBox.innerHTML = `<span class="text-rose-400">Error generating audio. Please retry.</span>`;
+                statusTag.innerText = "Error";
             }
 
             btn.disabled = false;
