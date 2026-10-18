@@ -136,25 +136,11 @@
                     </div>
                 </div>
 
-                <!-- Custom Styled Audio Player (Replaces 0:00 bug) -->
-                <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4 hidden" id="custom-player-box">
-                    <div class="flex items-center gap-3">
-                        <button onclick="togglePlayPause()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shadow-md">
-                            <i id="play-icon" class="fa-solid fa-play text-sm"></i>
-                        </button>
-                        <div class="flex-1 space-y-1">
-                            <div class="flex justify-between text-[11px] text-slate-400">
-                                <span id="current-time">0:00</span>
-                                <span id="total-duration">0:00</span>
-                            </div>
-                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer" onclick="seekAudio(event)">
-                                <div id="progress-bar" class="bg-indigo-500 h-full w-0 transition-all"></div>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-volume-high text-slate-400 text-sm"></i>
-                    </div>
+                <!-- Native Player and Binary Exporter -->
+                <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
+                    <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
 
-                    <button onclick="downloadGeneratedAudio()" id="download-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <button onclick="downloadGeneratedAudio()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
                         <span>Download Audio File (Winamp / Media Player / Android)</span>
                     </button>
@@ -167,10 +153,7 @@
         let selectedLang = 'Hindi';
         let selectedGender = 'female';
         let savedScriptText = '';
-        let estimatedDuration = 5;
-        let isPlaying = false;
-        let playbackTimer = null;
-        let currentSeconds = 0;
+        let activeAudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -201,12 +184,6 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function formatTime(secs) {
-            let mins = Math.floor(secs / 60);
-            let remSecs = Math.floor(secs % 60);
-            return `${mins}:${remSecs < 10 ? '0' : ''}${remSecs}`;
-        }
-
         function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
@@ -215,10 +192,11 @@
             const btn = document.getElementById('generate-btn');
             const statusTag = document.getElementById('output-status');
             const outputBox = document.getElementById('text-output');
-            const customPlayerBox = document.getElementById('custom-player-box');
+            const audioPlayer = document.getElementById('audio-player');
+            const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Voice...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Playing";
 
             let voiceName = selectedLang;
@@ -233,80 +211,40 @@
             const rateVal = parseFloat(document.getElementById('rate-slider').value);
             const pitchVal = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Calculate precise duration based on character length and speech speed rate
-            estimatedDuration = Math.max(4, (script.length * 0.14) / rateVal);
-            document.getElementById('total-duration').innerText = formatTime(estimatedDuration);
-            document.getElementById('current-time').innerText = "0:00";
-            document.getElementById('progress-bar').style.width = "0%";
-
             outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-            customPlayerBox.classList.remove('hidden');
 
-            // Play live natural human voice
+            // Play voice using ResponsiveVoice engine
             if (typeof responsiveVoice !== 'undefined') {
                 responsiveVoice.cancel();
                 responsiveVoice.speak(script, voiceName, {
                     rate: rateVal,
                     pitch: pitchVal,
-                    onstart: () => {
-                        startPlaybackTimer();
-                    },
                     onend: () => {
-                        stopPlaybackTimer();
                         statusTag.innerText = "Completed";
                         btn.disabled = false;
                         btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
                     }
                 });
             }
-        }
 
-        function startPlaybackTimer() {
-            isPlaying = true;
-            currentSeconds = 0;
-            document.getElementById('play-icon').className = "fa-solid fa-pause text-sm";
-            if (playbackTimer) clearInterval(playbackTimer);
+            // Set up audio stream endpoint for player and downloads
+            let langCode = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
+            activeAudioUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(script)}&tl=${langCode}&sv=${encodeURIComponent(voiceName)}`;
 
-            playbackTimer = setInterval(() => {
-                currentSeconds += 0.25;
-                if (currentSeconds >= estimatedDuration) {
-                    currentSeconds = estimatedDuration;
-                    stopPlaybackTimer();
+            audioPlayer.src = activeAudioUrl;
+            audioPlayer.classList.remove('hidden');
+            audioPlayer.load();
+            audioPlayer.play().catch(e => {});
+
+            downloadBtn.classList.remove('hidden');
+
+            setTimeout(() => {
+                if (btn.disabled) {
+                    statusTag.innerText = "Completed";
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
                 }
-                document.getElementById('current-time').innerText = formatTime(currentSeconds);
-                let pct = (currentSeconds / estimatedDuration) * 100;
-                document.getElementById('progress-bar').style.width = `${pct}%`;
-            }, 250);
-        }
-
-        function stopPlaybackTimer() {
-            isPlaying = false;
-            document.getElementById('play-icon').className = "fa-solid fa-play text-sm";
-            if (playbackTimer) clearInterval(playbackTimer);
-        }
-
-        function togglePlayPause() {
-            if (!savedScriptText) return;
-            if (isPlaying) {
-                if (typeof responsiveVoice !== 'undefined') responsiveVoice.pause();
-                stopPlaybackTimer();
-                document.getElementById('output-status').innerText = "Paused";
-            } else {
-                if (typeof responsiveVoice !== 'undefined') responsiveVoice.resume();
-                startPlaybackTimer();
-                document.getElementById('output-status').innerText = "Playing";
-            }
-        }
-
-        function seekAudio(event) {
-            const rect = event.currentTarget.getBoundingClientRect();
-            const clickX = event.clientX - rect.left;
-            const width = rect.width;
-            const clickRatio = clickX / width;
-
-            currentSeconds = clickRatio * estimatedDuration;
-            document.getElementById('current-time').innerText = formatTime(currentSeconds);
-            document.getElementById('progress-bar').style.width = `${clickRatio * 100}%`;
+            }, 3000);
         }
 
         async function downloadGeneratedAudio() {
@@ -329,7 +267,7 @@
                 document.body.removeChild(a);
             } catch (err) {
                 const a = document.createElement('a');
-                a.href = downloadUrl;
+                a.href = activeAudioUrl || downloadUrl;
                 a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
                 a.target = '_blank';
                 document.body.appendChild(a);
