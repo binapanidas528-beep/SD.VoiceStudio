@@ -195,12 +195,7 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Processing";
 
-            let voiceName = selectedGender === 'male' ? 'Raveena' : 'Aditi';
-            if (selectedLang === 'en') voiceName = selectedGender === 'male' ? 'Brian' : 'Emma';
-            if (selectedLang === 'bn') voiceName = 'Tanusree';
-            if (selectedLang === 'or') voiceName = 'Aditi';
-
-            const audioUrl = `https://corsproxy.io/?` + encodeURIComponent(`https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(script)}`);
+            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
 
             try {
                 const response = await fetch(audioUrl);
