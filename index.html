@@ -18,6 +18,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=free"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -52,10 +53,10 @@
                         <i class="fa-solid fa-language text-indigo-400"></i> Select Language
                     </label>
                     <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button onclick="setLang('hi-IN')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Hindi</button>
-                        <button onclick="setLang('or-IN')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
-                        <button onclick="setLang('en-US')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
-                        <button onclick="setLang('bn-IN')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
+                        <button onclick="setLang('Hindi')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Hindi</button>
+                        <button onclick="setLang('Hungarian')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
+                        <button onclick="setLang('UK English Female')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
+                        <button onclick="setLang('Bengali')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
                     </div>
                 </div>
 
@@ -87,7 +88,6 @@
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Output Format</label>
                         <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="wav">WAV Audio File</option>
                             <option value="mp3">MP3 Audio File</option>
                         </select>
                     </div>
@@ -149,10 +149,10 @@
     </main>
 
     <script>
-        let selectedLang = 'hi-IN';
+        let selectedLang = 'Hindi';
         let selectedGender = 'female';
-        let generatedBlobUrl = '';
-        let generatedBlobFile = null;
+        let savedScriptText = '';
+        let directStreamUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -171,7 +171,7 @@
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
-            const activeMap = { 'hi-IN': 'lang-hi', 'or-IN': 'lang-or', 'en-US': 'lang-en', 'bn-IN': 'lang-bn' };
+            const activeMap = { 'Hindi': 'lang-hi', 'Hungarian': 'lang-or', 'UK English Female': 'lang-en', 'Bengali': 'lang-bn' };
             document.getElementById(activeMap[lang]).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
@@ -187,6 +187,7 @@
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
+            savedScriptText = script;
             const btn = document.getElementById('generate-btn');
             const statusTag = document.getElementById('output-status');
             const outputBox = document.getElementById('text-output');
@@ -194,52 +195,42 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
-            statusTag.innerText = "Processing";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
+            statusTag.innerText = "Playing";
+
+            let voiceName = selectedLang;
+            if (selectedLang === 'Hindi') {
+                voiceName = selectedGender === 'male' ? 'Hindi India Male' : 'Hindi India Female';
+            } else if (selectedLang === 'UK English Female') {
+                voiceName = selectedGender === 'male' ? 'UK English Male' : 'UK English Female';
+            } else if (selectedLang === 'Bengali') {
+                voiceName = selectedGender === 'male' ? 'Bengali India Male' : 'Bengali India Female';
+            }
 
             const rateVal = parseFloat(document.getElementById('rate-slider').value);
             const pitchVal = parseFloat(document.getElementById('pitch-slider').value);
 
-            // 1. Live browser speech playback
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(script);
-            utterance.lang = selectedLang;
-            utterance.rate = rateVal;
-            utterance.pitch = pitchVal;
+            let langCode = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
+            directStreamUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(script)}&tl=${langCode}&sv=${encodeURIComponent(voiceName)}`;
 
-            utterance.onstart = () => {
-                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-                statusTag.innerText = "Playing";
-            };
+            outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
 
-            utterance.onend = () => {
-                statusTag.innerText = "Completed";
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            };
-
-            window.speechSynthesis.speak(utterance);
-
-            // 2. Generate a valid playable audio buffer matching exact text length for media players & correct duration display
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const duration = Math.max(4, script.length * 0.12 / rateVal);
-            const sampleRate = audioCtx.sampleRate;
-            const numSamples = Math.floor(sampleRate * duration);
-            const buffer = audioCtx.createBuffer(1, numSamples, sampleRate);
-            const channelData = buffer.getChannelData(0);
-
-            for (let i = 0; i < numSamples; i++) {
-                let t = i / sampleRate;
-                channelData[i] = (Math.sin(2 * Math.PI * 250 * t) * 0.3 + Math.sin(2 * Math.PI * 500 * t) * 0.15) * Math.exp(-t / duration);
+            if (typeof responsiveVoice !== 'undefined') {
+                responsiveVoice.speak(script, voiceName, {
+                    rate: rateVal,
+                    pitch: pitchVal,
+                    onend: () => {
+                        statusTag.innerText = "Completed";
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+                    }
+                });
             }
 
-            generatedBlobFile = bufferToWave(buffer, numSamples);
-            if (generatedBlobUrl) URL.revokeObjectURL(generatedBlobUrl);
-            generatedBlobUrl = URL.createObjectURL(generatedBlobFile);
-
-            audioPlayer.src = generatedBlobUrl;
+            audioPlayer.src = directStreamUrl;
             audioPlayer.classList.remove('hidden');
             audioPlayer.load();
+            audioPlayer.play().catch(e => {});
 
             downloadBtn.classList.remove('hidden');
 
@@ -252,44 +243,39 @@
             }, 3000);
         }
 
-        function downloadGeneratedAudio() {
-            if (!generatedBlobFile || !generatedBlobUrl) return alert("Pehle audio generate karein!");
-            const format = document.getElementById('export-format').value;
+        async function downloadGeneratedAudio() {
+            if (!savedScriptText) return alert("Pehle audio generate karein!");
 
-            const a = document.createElement('a');
-            a.href = generatedBlobUrl;
-            a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
+            const statusTag = document.getElementById('output-status');
+            statusTag.innerText = "Downloading MP3...";
 
-        function bufferToWave(abuffer, len) {
-            let numOfChan = abuffer.numberOfChannels,
-                length = len * numOfChan * 2 + 44,
-                out = new DataView(new ArrayBuffer(length)),
-                channels = [], sample, offset = 0, pos = 0;
+            let langCode = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
+            let downloadUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(savedScriptText)}&tl=${langCode}`;
 
-            function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
-            function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+            try {
+                const response = await fetch(downloadUrl);
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
 
-            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
-            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
-            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
-            setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164);
-            setUint32(length - pos - 4);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
 
-            for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
-            while (pos < length) {
-                for (let i = 0; i < numOfChan; i++) {
-                    sample = Math.max(-1, Math.min(1, channels[i][offset] || 0));
-                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
-                    out.setInt16(pos, sample, true);
-                    pos += 2;
-                }
-                offset++;
+                statusTag.innerText = "Completed";
+            } catch (err) {
+                const a = document.createElement('a');
+                a.href = directStreamUrl || downloadUrl;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                statusTag.innerText = "Completed";
             }
-            return new Blob([out], { type: "audio/wav" });
         }
     </script>
 </body>
