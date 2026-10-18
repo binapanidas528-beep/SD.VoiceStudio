@@ -150,8 +150,7 @@
     <script>
         let selectedLang = 'hi';
         let selectedGender = 'female';
-        let currentAudioBlob = null;
-        let currentAudioUrl = '';
+        let lastGeneratedUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -181,7 +180,7 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        async function processAndGenerateAudio() {
+        function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
@@ -195,39 +194,40 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Processing";
 
-            const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
+            let voiceName = selectedGender === 'male' ? 'Raveena' : 'Aditi';
+            if (selectedLang === 'en') voiceName = selectedGender === 'male' ? 'Brian' : 'Emma';
+            if (selectedLang === 'bn') voiceName = 'Tanusree';
+            if (selectedLang === 'or') voiceName = 'Aditi';
 
-            try {
-                const response = await fetch(audioUrl);
-                if (!response.ok) throw new Error("Audio generation failed");
+            const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voiceName}&text=${encodeURIComponent(script)}`;
+            lastGeneratedUrl = ttsUrl;
 
-                currentAudioBlob = await response.blob();
-                if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
-                currentAudioUrl = URL.createObjectURL(currentAudioBlob);
+            outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+            audioPlayer.src = ttsUrl;
+            audioPlayer.classList.remove('hidden');
+            audioPlayer.load();
 
-                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-                audioPlayer.src = currentAudioUrl;
-                audioPlayer.classList.remove('hidden');
-                audioPlayer.load();
-                await audioPlayer.play();
-
-                downloadBtn.classList.remove('hidden');
+            audioPlayer.play().then(() => {
                 statusTag.innerText = "Completed";
-            } catch (err) {
-                outputBox.innerHTML = `<span class="text-rose-400">Error generating audio. Please retry.</span>`;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+            }).catch(err => {
                 statusTag.innerText = "Error";
-            }
+                outputBox.innerHTML = `<span class="text-rose-400">Audio playback started. Click play on player controls.</span>`;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+            });
 
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+            downloadBtn.classList.remove('hidden');
         }
 
         function downloadGeneratedAudio() {
-            if (!currentAudioBlob || !currentAudioUrl) return alert("Pehle audio generate karein!");
+            if (!lastGeneratedUrl) return alert("Pehle audio generate karein!");
 
             const a = document.createElement('a');
-            a.href = currentAudioUrl;
+            a.href = lastGeneratedUrl;
             a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+            a.target = '_blank';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
