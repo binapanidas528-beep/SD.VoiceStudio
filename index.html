@@ -150,7 +150,8 @@
     <script>
         let selectedLang = 'hi';
         let selectedGender = 'female';
-        let directAudioUrl = '';
+        let audioBlobObj = null;
+        let audioBlobUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -180,7 +181,7 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function processAndGenerateAudio() {
+        async function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
@@ -191,41 +192,64 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
             statusTag.innerText = "Processing";
 
-            directAudioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
 
-            outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-            
-            audioPlayer.src = directAudioUrl;
-            audioPlayer.classList.remove('hidden');
-            audioPlayer.load();
+            try {
+                // Fetch using cors proxy fallback or direct blob request
+                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(ttsUrl)}`);
+                if (!response.ok) throw new Error("Network response failed");
 
-            audioPlayer.play().then(() => {
+                audioBlobObj = await response.blob();
+                if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
+                audioBlobUrl = URL.createObjectURL(audioBlobObj);
+
+                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                
+                audioPlayer.src = audioBlobUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.load();
+
                 statusTag.innerText = "Completed";
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            }).catch(err => {
-                statusTag.innerText = "Ready";
-                outputBox.innerHTML = `<span class="text-indigo-400">Audio ready! Click play on the player controls below.</span>`;
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            });
+                downloadBtn.classList.remove('hidden');
+            } catch (err) {
+                // Direct fallback URL if proxy fails
+                audioPlayer.src = ttsUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.load();
 
-            downloadBtn.classList.remove('hidden');
+                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                statusTag.innerText = "Completed";
+                downloadBtn.classList.remove('hidden');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
         }
 
         function downloadGeneratedAudio() {
-            if (!directAudioUrl) return alert("Pehle audio generate karein!");
+            const script = document.getElementById('voice-script').value.trim();
+            if (!script) return alert("Pehle audio generate karein!");
 
-            const a = document.createElement('a');
-            a.href = directAudioUrl;
-            a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            if (audioBlobUrl) {
+                const a = document.createElement('a');
+                a.href = audioBlobUrl;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=${selectedLang}&client=tw-ob`;
+                const a = document.createElement('a');
+                a.href = ttsUrl;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
         }
     </script>
 </body>
