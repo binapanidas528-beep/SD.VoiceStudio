@@ -195,7 +195,7 @@
 
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
-            statusTag.innerText = "Processing";
+            statusTag.innerText = "Playing";
 
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(script);
@@ -203,9 +203,16 @@
             utterance.rate = parseFloat(document.getElementById('rate-slider').value);
             utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
 
+            // Generate a silent wav blob matching duration so audio player shows correct time instead of 0:00
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const duration = Math.max(2, script.length * 0.08 / utterance.rate);
+            const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+            const wavBlob = bufferToWave(buffer, audioCtx.sampleRate * duration);
+            audioPlayer.src = URL.createObjectURL(wavBlob);
+
             utterance.onstart = () => {
                 outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-                statusTag.innerText = "Playing";
+                audioPlayer.play().catch(e => {});
             };
 
             utterance.onend = () => {
@@ -236,6 +243,34 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        }
+
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                out = new DataView(new ArrayBuffer(length)),
+                channels = [], sample, offset = 0, pos = 0;
+
+            function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164);
+            setUint32(length - pos - 4);
+
+            for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+            while (pos < length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset] || 0));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                    out.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([out], { type: "audio/wav" });
         }
     </script>
 </body>
