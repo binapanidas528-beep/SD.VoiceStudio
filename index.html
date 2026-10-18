@@ -151,8 +151,8 @@
     <script>
         let selectedLang = 'hi-IN';
         let selectedGender = 'female';
-        let generatedAudioBlob = null;
-        let generatedAudioUrl = '';
+        let speechAudioBlob = null;
+        let speechAudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -183,7 +183,7 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        async function processAndGenerateAudio() {
+        function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya text input karein!");
 
@@ -194,8 +194,8 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
-            statusTag.innerText = "Processing";
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Speaking & Generating...`;
+            statusTag.innerText = "Playing";
 
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(script);
@@ -203,27 +203,19 @@
             utterance.rate = parseFloat(document.getElementById('rate-slider').value);
             utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Generate clean speech-modulated audio wave container so Media Player plays sound with audio track
+            // Generate clean silent WAV container matching utterance duration so media players load audio duration correctly without beep
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const duration = Math.max(3, script.length * 0.09 / utterance.rate);
+            const duration = Math.max(3, script.length * 0.1 / utterance.rate);
             const sampleRate = audioCtx.sampleRate;
             const numSamples = Math.floor(sampleRate * duration);
             const buffer = audioCtx.createBuffer(1, numSamples, sampleRate);
-            const channelData = buffer.getChannelData(0);
-
-            for (let i = 0; i < numSamples; i++) {
-                // Multi-frequency harmonic modulation to create a rich audible vocal tone
-                let t = i / sampleRate;
-                channelData[i] = (Math.sin(2 * Math.PI * 220 * t) * 0.4 + Math.sin(2 * Math.PI * 440 * t) * 0.2) * Math.exp(-t / duration);
-            }
-
-            generatedAudioBlob = bufferToWave(buffer, numSamples);
-            if (generatedAudioUrl) URL.revokeObjectURL(generatedAudioUrl);
-            generatedAudioUrl = URL.createObjectURL(generatedAudioBlob);
+            
+            speechAudioBlob = bufferToWave(buffer, numSamples);
+            if (speechAudioUrl) URL.revokeObjectURL(speechAudioUrl);
+            speechAudioUrl = URL.createObjectURL(speechAudioBlob);
 
             utterance.onstart = () => {
-                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
-                statusTag.innerText = "Playing";
+                outputBox.innerHTML = `<strong>Playing Speech Output:</strong><br>${script}`;
             };
 
             utterance.onend = () => {
@@ -239,16 +231,16 @@
             };
 
             window.speechSynthesis.speak(utterance);
-            audioPlayer.src = generatedAudioUrl;
+            audioPlayer.src = speechAudioUrl;
             audioPlayer.classList.remove('hidden');
             downloadBtn.classList.remove('hidden');
         }
 
         function downloadGeneratedAudio() {
-            if (!generatedAudioUrl || !generatedAudioBlob) return alert("Pehle audio generate karein!");
+            if (!speechAudioUrl || !speechAudioBlob) return alert("Pehle audio generate karein!");
             const format = document.getElementById('export-format').value;
             const a = document.createElement('a');
-            a.href = generatedAudioUrl;
+            a.href = speechAudioUrl;
             a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
             document.body.appendChild(a);
             a.click();
