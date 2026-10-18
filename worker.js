@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
@@ -11,19 +11,30 @@ export default {
     }
 
     try {
-      let text = "Namaste";
-      let lang = "hi";
-
-      if (request.method === "POST") {
-        const data = await request.json();
-        if (data.text) text = data.text;
-        if (data.lang) lang = data.lang;
+      const { text, lang, gender } = await request.json();
+      if (!text) {
+        return new Response(JSON.stringify({ error: "Text is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
       }
 
-      // Fetch real MP3 stream from Google TTS
-      const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
-      const response = await fetch(googleTtsUrl);
-      const audioBuffer = await response.arrayBuffer();
+      let voice = gender === 'male' ? 'Raveena' : 'Aditi';
+      if (lang === 'en') voice = gender === 'male' ? 'Brian' : 'Emma';
+      else if (lang === 'bn') voice = 'Tanusree';
+
+      const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=${voice}&text=${encodeURIComponent(text)}`;
+      
+      // CRITICAL FIX: Adding User-Agent so StreamElements accepts the request
+      const ttsRes = await fetch(ttsUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        }
+      });
+
+      if (!ttsRes.ok) throw new Error("Audio generation failed from server.");
+
+      const audioBuffer = await ttsRes.arrayBuffer();
 
       return new Response(audioBuffer, {
         headers: {
