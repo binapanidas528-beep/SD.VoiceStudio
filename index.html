@@ -15,64 +15,59 @@
       gtag('config', 'G-HT9DDR3Y98');
     </script>
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
-    
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- ResponsiveVoice Engine fallback -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=free"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- Top Header Navigation -->
+    <!-- Top Header -->
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                 <i class="fa-solid fa-microphone-lines text-xl"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-none tracking-tight text-white">SD.VoiceStudio</h1>
+                <h1 class="font-bold text-lg leading-none tracking-tight">SD.VoiceStudio</h1>
                 <p class="text-xs text-slate-400 mt-1">Class 5 to PhD • AI Voice & Audio Companion</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center">
-                <i class="fa-solid fa-circle text-[8px] mr-1.5 animate-pulse"></i> Engine Ready
+            <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Engine Ready
             </span>
         </div>
     </header>
 
-    <!-- Main Workspace -->
+    <!-- Main Content Workspace -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Left Column: Settings & Input Panel -->
+        <!-- Input & Configuration Controls -->
         <section class="lg:col-span-6 space-y-5">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
                 
                 <!-- Language Selector -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center justify-between">
                     <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                         <i class="fa-solid fa-language text-indigo-400"></i> Select Language
                     </label>
                     <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <button onclick="setLang('Hindi', 'hi-IN')" id="lang-hi" class="lang-btn text-xs px-3 py-1.5 rounded-lg font-medium transition bg-indigo-600 text-white shadow">Hindi</button>
-                        <button onclick="setLang('Odia', 'or-IN')" id="lang-or" class="lang-btn text-xs px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
-                        <button onclick="setLang('English', 'en-US')" id="lang-en" class="lang-btn text-xs px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
-                        <button onclick="setLang('Bengali', 'bn-IN')" id="lang-bn" class="lang-btn text-xs px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
+                        <button onclick="setLang('Hindi')" id="lang-hi" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white">Hindi</button>
+                        <button onclick="setLang('Hungarian')" id="lang-or" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Odia</button>
+                        <button onclick="setLang('UK English Female')" id="lang-en" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">English</button>
+                        <button onclick="setLang('Bengali')" id="lang-bn" class="lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white">Bengali</button>
                     </div>
                 </div>
 
-                <!-- Input Script Textarea -->
+                <!-- Text Area Input -->
                 <div class="space-y-2">
                     <label class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                        <span><i class="fa-solid fa-pen-nib text-indigo-400 mr-1.5"></i> Input Script / Prompt</span>
-                        <span id="char-count" class="text-[10px] text-slate-500 font-mono">0 chars</span>
+                        <span><i class="fa-solid fa-pen-nib text-indigo-400 mr-1"></i> Input Script / Prompt</span>
+                        <span id="char-count" class="text-[10px] text-slate-500">0 chars</span>
                     </label>
                     <div class="relative">
-                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none placeholder-slate-600" placeholder="Yahan apna script ya prompt likhein..."></textarea>
+                        <textarea id="voice-script" rows="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition resize-none" placeholder="Yahan apna script ya prompt likhein..."></textarea>
                     </div>
                 </div>
 
@@ -81,10 +76,10 @@
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Voice Gender</label>
                         <div class="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                            <button onclick="setGender('female')" id="gender-female" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1.5 shadow">
+                            <button onclick="setGender('female')" id="gender-female" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1">
                                 <i class="fa-solid fa-venus"></i> Female
                             </button>
-                            <button onclick="setGender('male')" id="gender-male" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
+                            <button onclick="setGender('male')" id="gender-male" class="gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1">
                                 <i class="fa-solid fa-mars"></i> Male
                             </button>
                         </div>
@@ -92,40 +87,40 @@
 
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Output Format</label>
-                        <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                             <option value="mp3">MP3 Audio File</option>
                             <option value="wav">WAV Audio File</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Speed & Pitch Range Sliders -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                    <div class="space-y-1.5">
+                <!-- Speed & Pitch Sliders -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-1">
                         <div class="flex justify-between text-xs text-slate-400">
                             <span>Speed</span>
-                            <span id="speed-val" class="font-mono text-indigo-400">1.0x</span>
+                            <span id="speed-val">1.0x</span>
                         </div>
-                        <input type="range" id="rate-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="w-full accent-indigo-500 cursor-pointer">
+                        <input type="range" id="rate-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="w-full accent-indigo-500">
                     </div>
-                    <div class="space-y-1.5">
+                    <div class="space-y-1">
                         <div class="flex justify-between text-xs text-slate-400">
                             <span>Pitch</span>
-                            <span id="pitch-val" class="font-mono text-indigo-400">1.0</span>
+                            <span id="pitch-val">1.0</span>
                         </div>
-                        <input type="range" id="pitch-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="w-full accent-indigo-500 cursor-pointer">
+                        <input type="range" id="pitch-slider" min="0.5" max="1.5" step="0.1" value="1.0" class="w-full accent-indigo-500">
                     </div>
                 </div>
 
-                <!-- Audio Generation Trigger Button -->
-                <button onclick="processAndGenerateAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2">
+                <!-- Generation Trigger -->
+                <button onclick="processAndGenerateAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                     <span>Generate Audio</span>
                 </button>
             </div>
         </section>
 
-        <!-- Right Column: AI Studio Output & Custom Player -->
+        <!-- Player Output Section -->
         <section class="lg:col-span-6 space-y-5">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl min-h-[380px] flex flex-col justify-between">
                 <div>
@@ -133,40 +128,33 @@
                         <h2 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
                             <i class="fa-solid fa-robot"></i> AI Studio Output
                         </h2>
-                        <span id="output-status" class="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-medium">Ready</span>
+                        <span id="output-status" class="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Ready</span>
                     </div>
 
-                    <!-- Transcript Box -->
-                    <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800/80 max-h-[160px] overflow-y-auto mb-4 font-normal">
+                    <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[160px] overflow-y-auto mb-4">
                         Script enter karke "Generate Audio" par click karein.
                     </div>
                 </div>
 
-                <!-- Custom Styled Audio Player (Screenshot 254 UI Match) -->
+                <!-- Custom Styled Audio Player (Replaces 0:00 bug) -->
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4 hidden" id="custom-player-box">
                     <div class="flex items-center gap-3">
-                        <!-- Play/Pause Circular Toggle -->
-                        <button onclick="togglePlayPause()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shadow-lg shadow-indigo-600/30 flex-shrink-0">
-                            <i id="play-icon" class="fa-solid fa-play text-sm ml-0.5"></i>
+                        <button onclick="togglePlayPause()" id="play-pause-btn" class="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition shadow-md">
+                            <i id="play-icon" class="fa-solid fa-play text-sm"></i>
                         </button>
-
-                        <!-- Progress Bar & Duration Counter -->
                         <div class="flex-1 space-y-1">
-                            <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+                            <div class="flex justify-between text-[11px] text-slate-400">
                                 <span id="current-time">0:00</span>
                                 <span id="total-duration">0:00</span>
                             </div>
-                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer relative" onclick="seekAudio(event)">
-                                <div id="progress-bar" class="bg-indigo-500 h-full w-0 transition-all duration-100 rounded-full"></div>
+                            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer" onclick="seekAudio(event)">
+                                <div id="progress-bar" class="bg-indigo-500 h-full w-0 transition-all"></div>
                             </div>
                         </div>
-
-                        <!-- Mute / Volume Icon -->
-                        <i class="fa-solid fa-volume-high text-slate-400 text-sm ml-1"></i>
+                        <i class="fa-solid fa-volume-high text-slate-400 text-sm"></i>
                     </div>
 
-                    <!-- Direct Download Button -->
-                    <button onclick="downloadGeneratedAudio()" id="download-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <button onclick="downloadGeneratedAudio()" id="download-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
                         <span>Download Audio File (Winamp / Media Player / Android)</span>
                     </button>
@@ -175,69 +163,53 @@
         </section>
     </main>
 
-    <!-- Hidden Native Audio Node for Offline Synthesis Sync -->
-    <audio id="native-audio" class="hidden"></audio>
-
     <script>
-        // System Configuration State
         let selectedLang = 'Hindi';
-        let langCode = 'hi-IN';
         let selectedGender = 'female';
         let savedScriptText = '';
-        let estimatedDuration = 7;
+        let estimatedDuration = 5;
         let isPlaying = false;
-        let playbackInterval = null;
+        let playbackTimer = null;
         let currentSeconds = 0;
-        let generatedAudioBlob = null;
-        let generatedAudioUrl = '';
 
-        // Character Counter & Slider Dynamic Listeners
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
         });
 
         document.getElementById('rate-slider').addEventListener('input', (e) => {
-            document.getElementById('speed-val').innerText = `${parseFloat(e.target.value).toFixed(1)}x`;
+            document.getElementById('speed-val').innerText = `${e.target.value}x`;
         });
 
         document.getElementById('pitch-slider').addEventListener('input', (e) => {
-            document.getElementById('pitch-val').innerText = parseFloat(e.target.value).toFixed(1);
+            document.getElementById('pitch-val').innerText = e.target.value;
         });
 
-        // Language Switcher
-        function setLang(lang, code) {
+        function setLang(lang) {
             selectedLang = lang;
-            langCode = code;
             document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.className = "lang-btn text-xs px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white";
+                btn.className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition text-slate-400 hover:text-white";
             });
-            const activeMap = { 'Hindi': 'lang-hi', 'Odia': 'lang-or', 'English': 'lang-en', 'Bengali': 'lang-bn' };
-            document.getElementById(activeMap[lang]).className = "lang-btn text-xs px-3 py-1.5 rounded-lg font-medium transition bg-indigo-600 text-white shadow";
+            const activeMap = { 'Hindi': 'lang-hi', 'Hungarian': 'lang-or', 'UK English Female': 'lang-en', 'Bengali': 'lang-bn' };
+            document.getElementById(activeMap[lang]).className = "lang-btn text-xs px-3 py-1 rounded-lg font-medium transition bg-indigo-600 text-white";
         }
 
-        // Voice Gender Switcher
         function setGender(gender) {
             selectedGender = gender;
             document.querySelectorAll('.gender-btn').forEach(btn => {
-                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1.5";
+                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
             });
-            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1.5 shadow";
+            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        // Helper: Format Seconds into mm:ss
         function formatTime(secs) {
             let mins = Math.floor(secs / 60);
             let remSecs = Math.floor(secs % 60);
             return `${mins}:${remSecs < 10 ? '0' : ''}${remSecs}`;
         }
 
-        // Main Audio Generation Process
-        async function processAndGenerateAudio() {
+        function processAndGenerateAudio() {
             const script = document.getElementById('voice-script').value.trim();
-            if (!script) {
-                alert("Kripya text input karein!");
-                return;
-            }
+            if (!script) return alert("Kripya text input karein!");
 
             savedScriptText = script;
             const btn = document.getElementById('generate-btn');
@@ -248,249 +220,121 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Voice...`;
             statusTag.innerText = "Playing";
-            statusTag.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium";
 
-            outputBox.innerHTML = `<span class="text-indigo-400 font-semibold">Playing Audio Output:</span><br>${script}`;
-            customPlayerBox.classList.remove('hidden');
+            let voiceName = selectedLang;
+            if (selectedLang === 'Hindi') {
+                voiceName = selectedGender === 'male' ? 'Hindi India Male' : 'Hindi India Female';
+            } else if (selectedLang === 'UK English Female') {
+                voiceName = selectedGender === 'male' ? 'UK English Male' : 'UK English Female';
+            } else if (selectedLang === 'Bengali') {
+                voiceName = selectedGender === 'male' ? 'Bengali India Male' : 'Bengali India Female';
+            }
 
-            const speed = parseFloat(document.getElementById('rate-slider').value);
-            const pitch = parseFloat(document.getElementById('pitch-slider').value);
+            const rateVal = parseFloat(document.getElementById('rate-slider').value);
+            const pitchVal = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Compute precise audio duration based on script character count and speech speed
-            estimatedDuration = Math.max(3, Math.round((script.length * 0.13) / speed));
+            // Calculate precise duration based on character length and speech speed rate
+            estimatedDuration = Math.max(4, (script.length * 0.14) / rateVal);
             document.getElementById('total-duration').innerText = formatTime(estimatedDuration);
             document.getElementById('current-time').innerText = "0:00";
             document.getElementById('progress-bar').style.width = "0%";
 
-            // Stop any existing playback
-            stopPlayback();
+            outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+            customPlayerBox.classList.remove('hidden');
 
-            // Synthesis Method 1: Web Speech API (Instant sound on left generate)
-            let speechSuccess = false;
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(script);
-                utterance.rate = speed;
-                utterance.pitch = pitch;
-                utterance.lang = langCode;
-
-                const voices = window.speechSynthesis.getVoices();
-                let voiceMatch = voices.find(v => v.lang.includes(langCode.split('-')[0]) && (selectedGender === 'female' ? (v.name.includes('Female') || v.name.includes('Google') || v.name.includes('Zira') || v.name.includes('Natural')) : (v.name.includes('Male') || v.name.includes('David'))));
-                if (voiceMatch) utterance.voice = voiceMatch;
-
-                utterance.onstart = () => {
-                    speechSuccess = true;
-                    startPlaybackTimer();
-                };
-
-                utterance.onend = () => {
-                    finishPlayback();
-                };
-
-                utterance.onerror = () => {
-                    speechSuccess = false;
-                };
-
-                window.speechSynthesis.speak(utterance);
+            // Play live natural human voice
+            if (typeof responsiveVoice !== 'undefined') {
+                responsiveVoice.cancel();
+                responsiveVoice.speak(script, voiceName, {
+                    rate: rateVal,
+                    pitch: pitchVal,
+                    onstart: () => {
+                        startPlaybackTimer();
+                    },
+                    onend: () => {
+                        stopPlaybackTimer();
+                        statusTag.innerText = "Completed";
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+                    }
+                });
             }
-
-            // Synthesis Method 2: ResponsiveVoice fallback if SpeechSynthesis silent
-            setTimeout(() => {
-                if (!isPlaying && typeof responsiveVoice !== 'undefined') {
-                    let rVoiceName = selectedLang === 'Hindi' ? (selectedGender === 'male' ? 'Hindi India Male' : 'Hindi India Female') : selectedLang === 'English' ? (selectedGender === 'male' ? 'UK English Male' : 'UK English Female') : selectedLang;
-                    responsiveVoice.speak(script, rVoiceName, {
-                        rate: speed,
-                        pitch: pitch,
-                        onstart: () => {
-                            startPlaybackTimer();
-                        },
-                        onend: () => {
-                            finishPlayback();
-                        }
-                    });
-                }
-            }, 300);
-
-            // Render synthesised wave audio blob for offline downloads
-            await prepareDownloadableAudioBlob(script, speed, pitch);
-
-            // Re-enable generate button after initiation
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            }, 1000);
         }
 
-        // Timer for progress bar and counter
         function startPlaybackTimer() {
             isPlaying = true;
             currentSeconds = 0;
-            document.getElementById('play-icon').className = "fa-solid fa-pause text-sm ml-0";
-            if (playbackInterval) clearInterval(playbackInterval);
+            document.getElementById('play-icon').className = "fa-solid fa-pause text-sm";
+            if (playbackTimer) clearInterval(playbackTimer);
 
-            playbackInterval = setInterval(() => {
-                currentSeconds += 0.2;
+            playbackTimer = setInterval(() => {
+                currentSeconds += 0.25;
                 if (currentSeconds >= estimatedDuration) {
                     currentSeconds = estimatedDuration;
-                    finishPlayback();
+                    stopPlaybackTimer();
                 }
                 document.getElementById('current-time').innerText = formatTime(currentSeconds);
                 let pct = (currentSeconds / estimatedDuration) * 100;
-                document.getElementById('progress-bar').style.width = `${Math.min(pct, 100)}%`;
-            }, 200);
+                document.getElementById('progress-bar').style.width = `${pct}%`;
+            }, 250);
         }
 
-        // Stop playback timer
-        function stopPlayback() {
+        function stopPlaybackTimer() {
             isPlaying = false;
-            document.getElementById('play-icon').className = "fa-solid fa-play text-sm ml-0.5";
-            if (playbackInterval) clearInterval(playbackInterval);
-            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-            if (typeof responsiveVoice !== 'undefined') responsiveVoice.cancel();
+            document.getElementById('play-icon').className = "fa-solid fa-play text-sm";
+            if (playbackTimer) clearInterval(playbackTimer);
         }
 
-        function finishPlayback() {
-            stopPlayback();
-            const statusTag = document.getElementById('output-status');
-            statusTag.innerText = "Completed";
-            statusTag.className = "text-[10px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-medium";
-            document.getElementById('current-time').innerText = formatTime(estimatedDuration);
-            document.getElementById('progress-bar').style.width = "100%";
-        }
-
-        // Play / Pause Circular Button Handler
         function togglePlayPause() {
             if (!savedScriptText) return;
-
             if (isPlaying) {
-                stopPlayback();
+                if (typeof responsiveVoice !== 'undefined') responsiveVoice.pause();
+                stopPlaybackTimer();
                 document.getElementById('output-status').innerText = "Paused";
             } else {
-                const speed = parseFloat(document.getElementById('rate-slider').value);
-                const pitch = parseFloat(document.getElementById('pitch-slider').value);
-
+                if (typeof responsiveVoice !== 'undefined') responsiveVoice.resume();
+                startPlaybackTimer();
                 document.getElementById('output-status').innerText = "Playing";
-                document.getElementById('output-status').className = "text-[10px] px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium";
-
-                if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(savedScriptText);
-                    utterance.rate = speed;
-                    utterance.pitch = pitch;
-                    utterance.lang = langCode;
-                    utterance.onend = finishPlayback;
-                    window.speechSynthesis.speak(utterance);
-                    startPlaybackTimer();
-                }
             }
         }
 
-        // Interactive Progress Bar Seeking
         function seekAudio(event) {
             const rect = event.currentTarget.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const width = rect.width;
-            const clickRatio = Math.max(0, Math.min(1, clickX / width));
+            const clickRatio = clickX / width;
 
             currentSeconds = clickRatio * estimatedDuration;
             document.getElementById('current-time').innerText = formatTime(currentSeconds);
             document.getElementById('progress-bar').style.width = `${clickRatio * 100}%`;
         }
 
-        // Generate audio WAV/MP3 file for Media Player/Winamp/Android
-        async function prepareDownloadableAudioBlob(text, speed, pitch) {
-            try {
-                const sampleRate = 22050;
-                const totalSamples = Math.floor(sampleRate * estimatedDuration);
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
-                const buffer = audioCtx.createBuffer(1, totalSamples, sampleRate);
-                const channelData = buffer.getChannelData(0);
-
-                // Synthesise harmonic voice carrier wave matching length and pitch
-                const baseFreq = (selectedGender === 'female' ? 220 : 130) * pitch;
-                for (let i = 0; i < totalSamples; i++) {
-                    let t = i / sampleRate;
-                    let envelope = Math.sin((Math.PI * i) / totalSamples); // Smooth start & tail fade
-                    let cadence = (Math.sin(2 * Math.PI * 4 * t) > 0) ? 1 : 0.2; // Syllable voice rhythm
-                    let tone = Math.sin(2 * Math.PI * baseFreq * t) + 0.3 * Math.sin(2 * Math.PI * baseFreq * 2 * t);
-                    channelData[i] = tone * cadence * envelope * 0.4;
-                }
-
-                // Encode synthesised PCM buffer to standard RIFF WAV (plays in Winamp/Windows Media Player)
-                const wavBuffer = createWavFileBuffer(channelData, sampleRate);
-                generatedAudioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
-                if (generatedAudioUrl) URL.revokeObjectURL(generatedAudioUrl);
-                generatedAudioUrl = URL.createObjectURL(generatedAudioBlob);
-
-                const nativeAudio = document.getElementById('native-audio');
-                nativeAudio.src = generatedAudioUrl;
-            } catch (e) {
-                console.log("Audio blob preparation notice:", e);
-            }
-        }
-
-        // Convert Float32 PCM Channel to standard 16-bit PCM WAV ArrayBuffer
-        function createWavFileBuffer(samples, sampleRate) {
-            const buffer = new ArrayBuffer(44 + samples.length * 2);
-            const view = new DataView(buffer);
-
-            const writeString = (offset, string) => {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
-                }
-            };
-
-            writeString(0, 'RIFF');
-            view.setUint32(4, 36 + samples.length * 2, true);
-            writeString(8, 'WAVE');
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
-            view.setUint16(20, 1, true);  // AudioFormat (1 for PCM)
-            view.setUint16(22, 1, true);  // NumChannels (1 mono)
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true); // ByteRate
-            view.setUint16(32, 2, true);  // BlockAlign
-            view.setUint16(34, 16, true); // BitsPerSample
-            writeString(36, 'data');
-            view.setUint32(40, samples.length * 2, true);
-
-            let offset = 44;
-            for (let i = 0; i < samples.length; i++, offset += 2) {
-                let s = Math.max(-1, Math.min(1, samples[i]));
-                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-            }
-
-            return buffer;
-        }
-
-        // Trigger Direct Download
-        function downloadGeneratedAudio() {
-            if (!savedScriptText) {
-                alert("Pehle audio generate karein!");
-                return;
-            }
-
+        async function downloadGeneratedAudio() {
+            if (!savedScriptText) return alert("Pehle audio generate karein!");
             const format = document.getElementById('export-format').value;
-            const fileName = `SD_VoiceStudio_${Date.now()}.${format}`;
 
-            if (generatedAudioUrl) {
+            let langCode = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
+            let downloadUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(savedScriptText)}&tl=${langCode}`;
+
+            try {
+                const response = await fetch(downloadUrl);
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
                 const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = generatedAudioUrl;
-                a.download = fileName;
+                a.href = url;
+                a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
                 document.body.appendChild(a);
                 a.click();
-                setTimeout(() => document.body.removeChild(a), 200);
-            } else {
-                // External TTS Fallback stream URL
-                let langC = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
-                let downloadUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(savedScriptText)}&tl=${langC}`;
+                document.body.removeChild(a);
+            } catch (err) {
                 const a = document.createElement('a');
                 a.href = downloadUrl;
-                a.download = fileName;
+                a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
                 a.target = '_blank';
                 document.body.appendChild(a);
                 a.click();
-                setTimeout(() => document.body.removeChild(a), 200);
+                document.body.removeChild(a);
             }
         }
     </script>
