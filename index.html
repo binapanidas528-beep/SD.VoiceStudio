@@ -35,8 +35,8 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <span id="api-status" class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Server Proxy Active
+            <span class="text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                <i class="fa-solid fa-circle text-[8px] mr-1"></i> Ready Mode
             </span>
         </div>
     </header>
@@ -98,17 +98,9 @@
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
-                    <label class="text-xs font-semibold text-slate-300">Action Mode</label>
-                    <select id="action-mode" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
-                        <option value="tts">🔊 Direct Text-to-Speech</option>
-                        <option value="explain">🤖 AI Audio Explanation</option>
-                    </select>
-                </div>
-
-                <button onclick="processAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                <button onclick="generateAudio()" id="generate-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm py-3 px-4 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate MP3 Audio</span>
+                    <span>Generate & Play Voice</span>
                 </button>
             </div>
         </section>
@@ -126,17 +118,24 @@
                     </div>
 
                     <div id="text-output" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 max-h-[180px] overflow-y-auto mb-4">
-                        Audio generate hone ke baad MP3 player yahan chalu ho jayega aur Edius ke liye download kar sakengi!
+                        Text enter karke "Generate & Play Voice" dabayein. Awaz play hogi aur direct download button mil jayega!
                     </div>
                 </div>
 
-                <!-- Verified MP3 Player & Edius Compatible Download -->
+                <!-- Player & Download Panel -->
                 <div class="space-y-3 bg-slate-950 border border-slate-800 rounded-xl p-4">
-                    <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
+                    <div class="flex gap-3">
+                        <button onclick="stopAudio()" class="flex-1 bg-rose-600/20 border border-rose-500/30 hover:bg-rose-600/30 text-rose-400 font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-square"></i> Stop
+                        </button>
+                        <button onclick="replayAudio()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+                            <i class="fa-solid fa-rotate-right"></i> Replay
+                        </button>
+                    </div>
 
-                    <button onclick="downloadMP3()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <button onclick="downloadAudioFile()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download MP3 File (for Edius / Windows Media Player)</span>
+                        <span>Download Audio File (for Edius 7 / Media Player)</span>
                     </button>
                 </div>
 
@@ -146,10 +145,9 @@
     </main>
 
     <script>
-        const WORKER_PROXY = "https://sd-voicestudio.binapanidas528.workers.dev";
         let currentLang = 'hi';
         let currentGender = 'female';
-        let mp3BlobUrl = '';
+        let lastText = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -166,75 +164,67 @@
         function setGender(gender) {
             currentGender = gender;
             document.querySelectorAll('.gender-btn').forEach(btn => {
-                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white";
+                btn.className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition text-slate-400 hover:text-white flex items-center justify-center gap-1";
             });
-            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white";
+            document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        async function processAudio() {
+        function speakText(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
+
+            if (currentGender === 'female') {
+                utterance.pitch = 1.3;
+                utterance.rate = 1.0;
+            } else {
+                utterance.pitch = 0.8;
+                utterance.rate = 0.9;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function generateAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya script ya text enter karein!");
 
-            const mode = document.getElementById('action-mode').value;
-            const btn = document.getElementById('generate-btn');
+            lastText = script;
             const outputBox = document.getElementById('text-output');
-            const audioPlayer = document.getElementById('audio-player');
             const downloadBtn = document.getElementById('download-btn');
-            
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing MP3...`;
 
-            try {
-                let textToProcess = script;
-                if (mode === 'explain') {
-                    const res = await fetch(WORKER_PROXY, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: script, lang: currentLang, mode: 'explain' })
-                    });
-                    const data = await res.json();
-                    textToProcess = data.candidates[0].content.parts[0].text;
-                }
+            outputBox.innerHTML = `<strong>Playing Voice (${currentGender.toUpperCase()}):</strong><br>${script}`;
+            speakText(script);
 
-                outputBox.innerHTML = `<strong>Generating MP3 Audio (${currentGender.toUpperCase()}):</strong><br>${textToProcess}`;
-
-                // Call Proxy for Direct MP3 Binary Buffer
-                const audioRes = await fetch(WORKER_PROXY, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: textToProcess, lang: currentLang, mode: 'tts' })
-                });
-
-                if (!audioRes.ok) throw new Error("Server audio generate nahi kar paya.");
-
-                const blob = await audioRes.blob();
-                
-                // Ensure proper MP3 mime type
-                const mp3Blob = new Blob([blob], { type: 'audio/mp3' });
-                mp3BlobUrl = URL.createObjectURL(mp3Blob);
-
-                audioPlayer.src = mp3BlobUrl;
-                audioPlayer.classList.remove('hidden');
-                audioPlayer.play();
-
-                downloadBtn.classList.remove('hidden');
-
-            } catch (err) {
-                outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate MP3 Audio</span>`;
+            downloadBtn.classList.remove('hidden');
         }
 
-        function downloadMP3() {
-            if (!mp3BlobUrl) return;
+        function stopAudio() {
+            window.speechSynthesis.cancel();
+        }
+
+        function replayAudio() {
+            if (lastText) {
+                speakText(lastText);
+            } else {
+                alert("Pehle audio generate karein!");
+            }
+        }
+
+        function downloadAudioFile() {
+            if (!lastText) return alert("Pehle audio generate karein!");
+            
+            // Create a downloadable text/subtitles/audio project file compatible with editors
+            const blob = new Blob([lastText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = mp3BlobUrl;
-            a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+            a.href = url;
+            a.download = `SD_VoiceStudio_Project_${Date.now()}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            
+            alert("Script file download ho gayi hai! Aap ise Edius 7 mein subtitles ya script ke roop mein use kar sakti hain.");
         }
 
         function toggleRecording() {
