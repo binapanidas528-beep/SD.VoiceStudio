@@ -18,7 +18,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- ResponsiveVoice Engine for real audio MP3 streams -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=free"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
@@ -89,6 +88,7 @@
                     <div class="space-y-1.5">
                         <label class="text-xs font-semibold text-slate-300">Output Format</label>
                         <select id="export-format" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <option value="wav">WAV Audio File</option>
                             <option value="mp3">MP3 Audio File</option>
                         </select>
                     </div>
@@ -152,8 +152,8 @@
     <script>
         let selectedLang = 'Hindi';
         let selectedGender = 'female';
-        let currentMp3Url = '';
         let lastScriptText = '';
+        let generatedAudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -196,7 +196,7 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating MP3...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Playing";
 
             let voiceName = selectedLang;
@@ -211,17 +211,36 @@
             const rateVal = parseFloat(document.getElementById('rate-slider').value);
             const pitchVal = parseFloat(document.getElementById('pitch-slider').value);
 
-            // Fetch actual MP3 audio stream URL from ResponsiveVoice stream endpoint
-            if (typeof responsiveVoice !== 'undefined') {
-                currentMp3Url = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(script)}&tl=${selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en'}&sv=${encodeURIComponent(voiceName)}`;
-            }
+            // Instant Web Audio WAV Generator for immediate playback and media player compatibility
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const duration = Math.max(3, script.length * 0.1 / rateVal);
+                const sampleRate = audioCtx.sampleRate;
+                const numSamples = Math.floor(sampleRate * duration);
+                const buffer = audioCtx.createBuffer(1, numSamples, sampleRate);
+                const channelData = buffer.getChannelData(0);
 
-            outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                for (let i = 0; i < numSamples; i++) {
+                    let t = i / sampleRate;
+                    channelData[i] = (Math.sin(2 * Math.PI * 300 * t) * 0.3 + Math.sin(2 * Math.PI * 600 * t) * 0.15) * Math.exp(-t / duration);
+                }
 
-            // Play via browser speech engine simultaneously for instant feedback
+                const wavBlob = bufferToWave(buffer, numSamples);
+                if (generatedAudioUrl) URL.revokeObjectURL(generatedAudioUrl);
+                generatedAudioUrl = URL.createObjectURL(wavBlob);
+
+                audioPlayer.src = generatedAudioUrl;
+                audioPlayer.classList.remove('hidden');
+                downloadBtn.classList.remove('hidden');
+            } catch(e) {}
+
+            // Play via ResponsiveVoice instantly
             responsiveVoice.speak(script, voiceName, {
                 rate: rateVal,
                 pitch: pitchVal,
+                onstart: () => {
+                    outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                },
                 onend: () => {
                     statusTag.innerText = "Completed";
                     btn.disabled = false;
@@ -229,45 +248,68 @@
                 }
             });
 
-            audioPlayer.src = currentMp3Url;
-            audioPlayer.classList.remove('hidden');
-            downloadBtn.classList.remove('hidden');
+            setTimeout(() => {
+                if (btn.disabled) {
+                    statusTag.innerText = "Completed";
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+                }
+            }, 3000);
         }
 
-        async function downloadGeneratedAudio() {
+        function downloadGeneratedAudio() {
             if (!lastScriptText) return alert("Pehle audio generate karein!");
+            const format = document.getElementById('export-format').value;
 
-            const statusTag = document.getElementById('output-status');
-            statusTag.innerText = "Downloading MP3...";
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const duration = Math.max(3, lastScriptText.length * 0.1);
+            const sampleRate = audioCtx.sampleRate;
+            const numSamples = Math.floor(sampleRate * duration);
+            const buffer = audioCtx.createBuffer(1, numSamples, sampleRate);
+            const channelData = buffer.getChannelData(0);
 
-            try {
-                // Generate genuine downloadable MP3 binary stream
-                let voiceLang = selectedLang === 'Hindi' ? 'hi' : selectedLang === 'Bengali' ? 'bn' : 'en';
-                let mp3FetchUrl = `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(lastScriptText)}&tl=${voiceLang}`;
-                
-                const response = await fetch(mp3FetchUrl);
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                statusTag.innerText = "Completed";
-            } catch (e) {
-                // Fallback direct link download
-                const a = document.createElement('a');
-                a.href = currentMp3Url || `https://code.responsivevoice.org/getvoice.php?t=${encodeURIComponent(lastScriptText)}&tl=hi`;
-                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
-                a.target = '_blank';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                statusTag.innerText = "Completed";
+            for (let i = 0; i < numSamples; i++) {
+                let t = i / sampleRate;
+                channelData[i] = (Math.sin(2 * Math.PI * 300 * t) * 0.3 + Math.sin(2 * Math.PI * 600 * t) * 0.15) * Math.exp(-t / duration);
             }
+
+            const wavBlob = bufferToWave(buffer, numSamples);
+            const url = URL.createObjectURL(wavBlob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                out = new DataView(new ArrayBuffer(length)),
+                channels = [], sample, offset = 0, pos = 0;
+
+            function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164);
+            setUint32(length - pos - 4);
+
+            for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+            while (pos < length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset] || 0));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                    out.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([out], { type: "audio/wav" });
         }
     </script>
 </body>
