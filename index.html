@@ -134,10 +134,10 @@
                 <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
                     <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
                     
-                    <a id="download-link" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer">
+                    <button onclick="downloadAudioFile()" id="download-btn" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download Audio File</span>
-                    </a>
+                        <span>Download MP3 Audio</span>
+                    </button>
                 </div>
 
             </div>
@@ -147,20 +147,9 @@
 
     <script>
         const WORKER_PROXY = "https://sd-voicestudio.binapanidas528.workers.dev";
-        let currentLang = 'or';
+        let currentLang = 'hi';
         let currentGender = 'female';
-        let availableVoices = [];
-        let generatedAudioBlob = null;
-
-        function loadVoices() {
-            if ('speechSynthesis' in window) {
-                availableVoices = window.speechSynthesis.getVoices();
-            }
-        }
-        loadVoices();
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = loadVoices;
-        }
+        let currentAudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -182,22 +171,6 @@
             document.getElementById(`gender-${gender}`).className = "gender-btn flex-1 text-xs py-2 rounded-lg font-medium transition bg-indigo-600 text-white flex items-center justify-center gap-1";
         }
 
-        function getBestVoice(targetLang, gender) {
-            if (!availableVoices.length) availableVoices = window.speechSynthesis.getVoices();
-            
-            const langCode = targetLang === 'hi' ? 'hi' : targetLang === 'or' ? 'or' : targetLang === 'bn' ? 'bn' : 'en';
-            const matches = availableVoices.filter(v => v.lang.startsWith(langCode));
-
-            if (matches.length > 0) {
-                const genderMatch = matches.find(v => v.name.toLowerCase().includes(gender));
-                if (genderMatch) return genderMatch;
-                return matches[0];
-            }
-
-            const fallbackMatch = availableVoices.find(v => v.name.toLowerCase().includes(gender));
-            return fallbackMatch || availableVoices[0] || null;
-        }
-
         async function processAudio() {
             const script = document.getElementById('voice-script').value.trim();
             if (!script) return alert("Kripya script ya text enter karein!");
@@ -206,14 +179,12 @@
             const btn = document.getElementById('generate-btn');
             const outputBox = document.getElementById('text-output');
             const audioPlayer = document.getElementById('audio-player');
-            const downloadBtn = document.getElementById('download-link');
+            const downloadBtn = document.getElementById('download-btn');
             
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Audio...`;
 
             try {
-                window.speechSynthesis.cancel();
-
                 let textToSpeak = script;
                 if (mode === 'explain') {
                     const prompt = `Language: ${currentLang}. Explain this topic clearly in simple terms: ${script}`;
@@ -229,49 +200,18 @@
                     outputBox.innerHTML = `<strong>Generating Text-to-Speech (${currentGender.toUpperCase()}):</strong><br>${script}`;
                 }
 
-                // Speech Synthesis Setup
-                const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
+                // Clean text for audio URL
+                const encodedText = encodeURIComponent(textToSpeak.substring(0, 200));
+                const langCode = currentLang === 'hi' ? 'hi' : currentLang === 'or' ? 'or' : currentLang === 'bn' ? 'bn' : 'en';
+                
+                // Direct Audio Stream Link
+                currentAudioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${langCode}&client=tw-ob`;
 
-                const selectedVoice = getBestVoice(currentLang, currentGender);
-                if (selectedVoice) {
-                    utterance.voice = selectedVoice;
-                }
+                audioPlayer.src = currentAudioUrl;
+                audioPlayer.classList.remove('hidden');
+                audioPlayer.play();
 
-                if (currentGender === 'female') {
-                    utterance.pitch = 1.2;
-                    utterance.rate = 1.0;
-                } else {
-                    utterance.pitch = 0.8;
-                    utterance.rate = 0.95;
-                }
-
-                window.speechSynthesis.speak(utterance);
-
-                // Audio recording stream for real audio playback & download
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const dest = audioCtx.createMediaStreamDestination();
-                const recorder = new MediaRecorder(dest.stream);
-                const chunks = [];
-
-                recorder.ondataavailable = e => chunks.push(e.data);
-                recorder.onstop = () => {
-                    generatedAudioBlob = new Blob(chunks, { type: 'audio/wav' });
-                    const audioUrl = URL.createObjectURL(generatedAudioBlob);
-                    
-                    audioPlayer.src = audioUrl;
-                    audioPlayer.classList.remove('hidden');
-                    
-                    downloadBtn.href = audioUrl;
-                    downloadBtn.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.wav`;
-                    downloadBtn.classList.remove('hidden');
-                };
-
-                utterance.onstart = () => recorder.start();
-                utterance.onend = () => {
-                    recorder.stop();
-                    audioCtx.close();
-                };
+                downloadBtn.classList.remove('hidden');
 
             } catch (err) {
                 outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
@@ -279,6 +219,23 @@
 
             btn.disabled = false;
             btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+        }
+
+        async function downloadAudioFile() {
+            if (!currentAudioUrl) return;
+            try {
+                const response = await fetch(currentAudioUrl);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `SD_VoiceStudio_${Date.now()}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch (e) {
+                window.open(currentAudioUrl, '_blank');
+            }
         }
 
         function toggleRecording() {
