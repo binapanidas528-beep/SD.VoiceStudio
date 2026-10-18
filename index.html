@@ -134,10 +134,10 @@
                 <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
                     <audio id="audio-player" controls class="w-full rounded-lg h-10 hidden"></audio>
                     
-                    <button onclick="downloadAudio()" id="download-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <a id="download-link" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer">
                         <i class="fa-solid fa-download text-sm"></i>
-                        <span>Download MP3 Audio File</span>
-                    </button>
+                        <span>Download Audio File</span>
+                    </a>
                 </div>
 
             </div>
@@ -150,6 +150,7 @@
         let currentLang = 'or';
         let currentGender = 'female';
         let availableVoices = [];
+        let generatedAudioBlob = null;
 
         function loadVoices() {
             if ('speechSynthesis' in window) {
@@ -204,6 +205,8 @@
             const mode = document.getElementById('action-mode').value;
             const btn = document.getElementById('generate-btn');
             const outputBox = document.getElementById('text-output');
+            const audioPlayer = document.getElementById('audio-player');
+            const downloadBtn = document.getElementById('download-link');
             
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Audio...`;
@@ -226,6 +229,7 @@
                     outputBox.innerHTML = `<strong>Generating Text-to-Speech (${currentGender.toUpperCase()}):</strong><br>${script}`;
                 }
 
+                // Speech Synthesis Setup
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
                 utterance.lang = currentLang === 'hi' ? 'hi-IN' : currentLang === 'or' ? 'or-IN' : currentLang === 'bn' ? 'bn-IN' : 'en-US';
 
@@ -244,25 +248,37 @@
 
                 window.speechSynthesis.speak(utterance);
 
+                // Audio recording stream for real audio playback & download
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const dest = audioCtx.createMediaStreamDestination();
+                const recorder = new MediaRecorder(dest.stream);
+                const chunks = [];
+
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    generatedAudioBlob = new Blob(chunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(generatedAudioBlob);
+                    
+                    audioPlayer.src = audioUrl;
+                    audioPlayer.classList.remove('hidden');
+                    
+                    downloadBtn.href = audioUrl;
+                    downloadBtn.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.wav`;
+                    downloadBtn.classList.remove('hidden');
+                };
+
+                utterance.onstart = () => recorder.start();
+                utterance.onend = () => {
+                    recorder.stop();
+                    audioCtx.close();
+                };
+
             } catch (err) {
                 outputBox.innerHTML = `<span class="text-rose-400">Error: ${err.message}</span>`;
             }
 
             btn.disabled = false;
             btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-        }
-
-        function downloadAudio() {
-            const script = document.getElementById('voice-script').value.trim();
-            if (!script) return alert("Pehle Audio Generate karein!");
-
-            const element = document.createElement("a");
-            const file = new Blob([script], {type: 'audio/mp3'});
-            element.href = URL.createObjectURL(file);
-            element.download = `SD_VoiceStudio_${currentGender}_${Date.now()}.mp3`;
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
         }
 
         function toggleRecording() {
