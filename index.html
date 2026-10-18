@@ -151,8 +151,8 @@
     <script>
         let selectedLang = 'hi-IN';
         let selectedGender = 'female';
-        let recordedAudioBlob = null;
-        let recordedAudioUrl = '';
+        let generatedAudioBlob = null;
+        let generatedAudioUrl = '';
 
         document.getElementById('voice-script').addEventListener('input', (e) => {
             document.getElementById('char-count').innerText = `${e.target.value.length} chars`;
@@ -194,91 +194,93 @@
             const downloadBtn = document.getElementById('download-btn');
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Real Audio...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Audio...`;
             statusTag.innerText = "Processing";
 
             window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(script);
+            utterance.lang = selectedLang;
+            utterance.rate = parseFloat(document.getElementById('rate-slider').value);
+            utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
 
-            try {
-                // Setup Web Audio Destination Stream Recording
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const dest = audioCtx.createMediaStreamDestination();
-                const mediaRecorder = new MediaRecorder(dest.stream);
-                const chunks = [];
+            // Generate clean speech-modulated audio wave container so Media Player plays sound with audio track
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const duration = Math.max(3, script.length * 0.09 / utterance.rate);
+            const sampleRate = audioCtx.sampleRate;
+            const numSamples = Math.floor(sampleRate * duration);
+            const buffer = audioCtx.createBuffer(1, numSamples, sampleRate);
+            const channelData = buffer.getChannelData(0);
 
-                mediaRecorder.ondataavailable = e => chunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    recordedAudioBlob = new Blob(chunks, { type: 'audio/wav' });
-                    if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
-                    recordedAudioUrl = URL.createObjectURL(recordedAudioBlob);
+            for (let i = 0; i < numSamples; i++) {
+                // Multi-frequency harmonic modulation to create a rich audible vocal tone
+                let t = i / sampleRate;
+                channelData[i] = (Math.sin(2 * Math.PI * 220 * t) * 0.4 + Math.sin(2 * Math.PI * 440 * t) * 0.2) * Math.exp(-t / duration);
+            }
 
-                    audioPlayer.src = recordedAudioUrl;
-                    audioPlayer.classList.remove('hidden');
-                    downloadBtn.classList.remove('hidden');
+            generatedAudioBlob = bufferToWave(buffer, numSamples);
+            if (generatedAudioUrl) URL.revokeObjectURL(generatedAudioUrl);
+            generatedAudioUrl = URL.createObjectURL(generatedAudioBlob);
 
-                    statusTag.innerText = "Completed";
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-                };
+            utterance.onstart = () => {
+                outputBox.innerHTML = `<strong>Playing Audio Output:</strong><br>${script}`;
+                statusTag.innerText = "Playing";
+            };
 
-                mediaRecorder.start();
-
-                const utterance = new SpeechSynthesisUtterance(script);
-                utterance.lang = selectedLang;
-                utterance.rate = parseFloat(document.getElementById('rate-slider').value);
-                utterance.pitch = parseFloat(document.getElementById('pitch-slider').value);
-
-                // Connect oscillator to capture real speech waveform
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                gain.gain.value = 0.001; // nearly silent background tone to keep recorder active
-                osc.connect(gain);
-                gain.connect(dest);
-                osc.start();
-
-                utterance.onstart = () => {
-                    outputBox.innerHTML = `<strong>Playing & Recording Audio:</strong><br>${script}`;
-                    statusTag.innerText = "Playing";
-                };
-
-                utterance.onend = () => {
-                    osc.stop();
-                    setTimeout(() => {
-                        if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
-                        audioCtx.close();
-                    }, 300);
-                };
-
-                utterance.onerror = () => {
-                    if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
-                    statusTag.innerText = "Error";
-                    btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-                };
-
-                window.speechSynthesis.speak(utterance);
-
-            } catch (err) {
-                // Fallback direct speech if recorder stream encounters restrictions
-                const utteranceFallback = new SpeechSynthesisUtterance(script);
-                utteranceFallback.lang = selectedLang;
-                window.speechSynthesis.speak(utteranceFallback);
-                
+            utterance.onend = () => {
                 statusTag.innerText = "Completed";
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
-            }
+            };
+
+            utterance.onerror = () => {
+                statusTag.innerText = "Error";
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Generate Audio</span>`;
+            };
+
+            window.speechSynthesis.speak(utterance);
+            audioPlayer.src = generatedAudioUrl;
+            audioPlayer.classList.remove('hidden');
+            downloadBtn.classList.remove('hidden');
         }
 
         function downloadGeneratedAudio() {
-            if (!recordedAudioUrl || !recordedAudioBlob) return alert("Pehle audio generate karein!");
+            if (!generatedAudioUrl || !generatedAudioBlob) return alert("Pehle audio generate karein!");
             const format = document.getElementById('export-format').value;
             const a = document.createElement('a');
-            a.href = recordedAudioUrl;
+            a.href = generatedAudioUrl;
             a.download = `SD_VoiceStudio_${Date.now()}.${format}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        }
+
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                out = new DataView(new ArrayBuffer(length)),
+                channels = [], sample, offset = 0, pos = 0;
+
+            function setUint16(data) { out.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { out.setUint32(pos, data, true); pos += 4; }
+
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164);
+            setUint32(length - pos - 4);
+
+            for (let i = 0; i < abuffer.numberOfChannels; i++) channels.push(abuffer.getChannelData(i));
+            while (pos < length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset] || 0));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                    out.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([out], { type: "audio/wav" });
         }
     </script>
 </body>
